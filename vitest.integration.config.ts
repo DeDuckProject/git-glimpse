@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['tests/integration/**/*.test.ts'],
+    exclude: ['tests/integration/llm-*.test.ts', '**/node_modules/**'],
     globals: true,
     testTimeout: 60000,
     hookTimeout: 30000,

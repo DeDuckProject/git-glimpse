@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.js
+*.d.ts
+*.d.ts.map
+*.js.map
+!jest.config.js
+!.eslintrc.js
+.env
+.env.local
+recordings/
+screenshots/
+*.webm
+*.gif
+*.mp4
+.DS_Store
+coverage/

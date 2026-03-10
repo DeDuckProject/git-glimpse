@@ -1,0 +1,25 @@
+{
+  "name": "git-glimpse",
+  "version": "0.1.0",
+  "description": "CLI for git-glimpse — auto-generate visual demo clips for PR changes",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "git-glimpse": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@git-glimpse/core": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.12.0"
+  }
+}

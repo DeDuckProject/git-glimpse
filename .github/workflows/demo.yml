@@ -1,0 +1,40 @@
+# GitGlimpse Demo Workflow
+# Safe: no untrusted user input (PR titles/bodies) is used in run: commands.
+# All PR context is passed via the GITHUB_TOKEN to the action itself.
+name: GitGlimpse Demo
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'packages/**'
+      - 'frameworks/**'
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - run: pnpm install
+
+      - uses: git-glimpse/action@v1
+        with:
+          config-path: git-glimpse.config.ts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

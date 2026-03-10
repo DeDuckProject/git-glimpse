@@ -15,3 +15,5 @@ export type { ChangeAnalysis } from './analyzer/change-summarizer.js';
 
 export { generateDemoScript } from './generator/script-generator.js';
 export { postPRComment } from './publisher/github-comment.js';
+export { uploadArtifact, uploadToGitHubAssets } from './publisher/storage.js';
+export type { UploadResult } from './publisher/storage.js';

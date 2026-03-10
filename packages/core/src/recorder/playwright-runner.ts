@@ -66,19 +66,21 @@ async function createContext(
   });
 }
 
-async function executeScript(script: string, page: Page, baseUrl: string): Promise<void> {
-  // Write script to a temp module and import it
+async function executeScript(script: string, page: Page, _baseUrl: string): Promise<void> {
   const { writeFileSync, unlinkSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { pathToFileURL } = await import('node:url');
+  const { transformSync } = await import('esbuild');
+
+  // Transpile TypeScript → ESM JavaScript via esbuild
+  const { code } = transformSync(script, {
+    loader: 'ts',
+    format: 'esm',
+    target: 'node20',
+  });
 
   const tmpPath = join(tmpdir(), `git-glimpse-script-${Date.now()}.mjs`);
-
-  // Wrap the TypeScript-style script in runnable ESM
-  // Strip type annotations for direct execution
-  const runnableScript = stripTypeAnnotations(script);
-
-  writeFileSync(tmpPath, runnableScript, 'utf-8');
+  writeFileSync(tmpPath, code, 'utf-8');
 
   try {
     const mod = await import(pathToFileURL(tmpPath).href);
@@ -91,22 +93,15 @@ async function executeScript(script: string, page: Page, baseUrl: string): Promi
   }
 }
 
-function stripTypeAnnotations(script: string): string {
-  // Remove TypeScript import and type annotations for direct Node.js execution
-  return script
-    .replace(/^import type.*$/gm, '') // remove type-only imports
-    .replace(/: Page/g, '') // remove : Page annotation
-    .replace(/: Promise<void>/g, '') // remove return type
-    .replace(/^import \{ .* \} from '@playwright\/test';$/gm, ''); // remove playwright import (page is passed in)
-}
-
 async function resolveVideoPath(outputDir: string): Promise<string> {
-  const { readdirSync } = await import('node:fs');
-  const files = readdirSync(outputDir).filter((f) => f.endsWith('.webm'));
-  files.sort(); // latest by name
+  const { readdirSync, statSync } = await import('node:fs');
+  const files = readdirSync(outputDir)
+    .filter((f) => f.endsWith('.webm'))
+    .map((f) => ({ name: f, mtime: statSync(join(outputDir, f)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime); // newest first
 
-  const latest = files[files.length - 1];
+  const latest = files[0];
   if (!latest) throw new Error(`No video file found in ${outputDir}`);
 
-  return join(outputDir, latest);
+  return join(outputDir, latest.name);
 }

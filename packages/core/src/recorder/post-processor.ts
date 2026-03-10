@@ -46,6 +46,7 @@ async function convertToGif(input: string, output: string, viewport: { width: nu
   execFileSync('ffmpeg', [
     '-i', input,
     '-vf', `fps=12,scale=${targetWidth}:-1:flags=lanczos,palettegen=stats_mode=diff`,
+    '-update', '1',
     '-y', palettePath,
   ]);
 

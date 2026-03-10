@@ -11,6 +11,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },

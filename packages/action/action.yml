@@ -6,6 +6,9 @@ branding:
   color: 'purple'
 
 inputs:
+  trigger-mode:
+    description: 'Trigger mode: auto, on-demand, or smart (overrides config file)'
+    required: false
   start-command:
     description: 'Command to start the app (overrides config file)'
     required: false

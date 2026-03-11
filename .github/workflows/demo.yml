@@ -1,21 +1,18 @@
-# GitGlimpse Demo Workflow
+# GitGlimpse E2E Demo Workflow
+# Runs the action against a local example app on every PR.
 # Safe: no untrusted user input (PR titles/bodies) is used in run: commands.
-# All PR context is passed via the GITHUB_TOKEN to the action itself.
 name: GitGlimpse Demo
 
 on:
   pull_request:
     types: [opened, synchronize]
-    paths:
-      - 'packages/**'
-      - 'frameworks/**'
 
 jobs:
   demo:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -27,14 +24,29 @@ jobs:
           node-version: '20'
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
-      - run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
-      - uses: git-glimpse/action@v1
+      - name: Install Playwright Chromium
+        run: pnpm --filter @git-glimpse/core exec playwright install chromium --with-deps
+
+      - name: Start example app
+        run: node examples/simple-app/server.js &
+
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:3000 && echo "App ready" && exit 0
+            echo "Waiting... ($i)"
+            sleep 1
+          done
+          echo "App did not become ready" && exit 1
+
+      - uses: ./packages/action
         with:
-          config-path: git-glimpse.config.ts
+          preview-url: 'http://localhost:3000'
+          config-path: examples/simple-app/git-glimpse.config.ts
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

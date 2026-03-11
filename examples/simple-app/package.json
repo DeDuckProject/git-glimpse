@@ -1,0 +1,9 @@
+{
+  "name": "git-glimpse-simple-app",
+  "version": "1.0.0",
+  "description": "Minimal example app for git-glimpse E2E testing",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

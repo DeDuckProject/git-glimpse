@@ -3,19 +3,20 @@
   "version": "0.1.0",
   "description": "GitHub Action for git-glimpse",
   "license": "MIT",
-  "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "pnpm --filter @git-glimpse/core build && esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:@playwright/test --external:playwright-core --external:playwright --external:esbuild --sourcemap",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@actions/artifact": "^2.1.11",
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@git-glimpse/core": "workspace:*"
+    "@git-glimpse/core": "workspace:*",
+    "@playwright/test": "^1.44.0"
   },
   "devDependencies": {
+    "esbuild": "^0.21.5",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
     "@types/node": "^20.12.0"

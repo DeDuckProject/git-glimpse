@@ -6,8 +6,23 @@ import {
   runPipeline,
   postPRComment,
   uploadArtifact,
+  uploadToGitHubAssets,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
+
+function streamCommand(cmd: string, args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    const proc = spawn(cmd, args, { shell: false });
+    proc.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    proc.stderr.on('data', (chunk: Buffer) => chunks.push(chunk));
+    proc.on('error', reject);
+    proc.on('close', (code) => {
+      if (code !== 0) reject(new Error(`${cmd} exited with code ${code}`));
+      else resolve(Buffer.concat(chunks).toString('utf-8'));
+    });
+  });
+}
 
 async function run(): Promise<void> {
   const context = github.context;
@@ -49,8 +64,8 @@ async function run(): Promise<void> {
   }
 
   core.info(`Computing diff: ${baseSha}..${headSha}`);
-  // Use execFileSync with args array — no shell, no injection risk
-  const diff = execFileSync('git', ['diff', `${baseSha}..${headSha}`], { encoding: 'utf-8' });
+  // Stream git diff to avoid maxBuffer limits on large diffs (e.g. bundled dist files)
+  const diff = await streamCommand('git', ['diff', `${baseSha}..${headSha}`]);
 
   const baseUrl = resolveBaseUrl(config, previewUrlInput);
   if (!baseUrl) {
@@ -89,6 +104,17 @@ async function run(): Promise<void> {
       core.setOutput('recording-url', recordingUrl);
     }
 
+    let screenshotUrls: string[] | undefined;
+    if (result.screenshots && result.screenshots.length > 0) {
+      core.info(`Uploading ${result.screenshots.length} screenshot(s)...`);
+      const { owner, repo: repoName } = context.repo;
+      const uploadPromises = result.screenshots.map((screenshotPath) =>
+        uploadToGitHubAssets(token, owner, repoName, screenshotPath)
+      );
+      const uploads = await Promise.all(uploadPromises);
+      screenshotUrls = uploads.map((u) => u.url);
+    }
+
     const { owner, repo } = context.repo;
     const comment = await postPRComment(token, {
       owner,
@@ -96,7 +122,7 @@ async function run(): Promise<void> {
       pullNumber,
       analysis: result.analysis,
       recordingUrl,
-      screenshots: result.screenshots,
+      screenshots: screenshotUrls,
       script: result.script,
     });
 

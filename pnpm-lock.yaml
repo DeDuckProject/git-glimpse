@@ -32,10 +32,16 @@ importers:
       '@git-glimpse/core':
         specifier: workspace:*
         version: link:../core
+      '@playwright/test':
+        specifier: ^1.44.0
+        version: 1.58.2
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.37
+      esbuild:
+        specifier: ^0.21.5
+        version: 0.21.5
       typescript:
         specifier: ^5.4.5
         version: 5.9.3
@@ -83,6 +89,9 @@ importers:
         specifier: ^3.23.4
         version: 3.25.76
     devDependencies:
+      '@actions/artifact':
+        specifier: ^2.1.11
+        version: 2.3.2
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.37

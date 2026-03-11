@@ -1,5 +1,8 @@
 node_modules/
 dist/
+!packages/action/dist/
+!packages/action/dist/**
+!examples/**/*.js
 *.js
 *.d.ts
 *.d.ts.map

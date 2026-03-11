@@ -74,7 +74,7 @@ function buildCommentBody(options: CommentOptions): string {
   const mediaSection = recordingUrl
     ? `![Demo](${recordingUrl})`
     : screenshots && screenshots.length > 0
-    ? screenshots.map((s, i) => `**Screenshot ${i + 1}:** [View](${s})`).join('\n')
+    ? screenshots.map((s, i) => `![Screenshot ${i + 1}](${s})`).join('\n')
     : '_No recording available._';
 
   const rerunSection = rerunUrl ? `\n\n[↺ Re-run demo](${rerunUrl})` : '';

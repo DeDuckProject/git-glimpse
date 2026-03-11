@@ -24,14 +24,17 @@ export async function uploadArtifact(filePath: string, artifactName?: string): P
   });
 
   const client = new DefaultArtifactClient();
-  await client.uploadArtifact(name, [filePath], '.', { retentionDays: 30 });
+  const response = await client.uploadArtifact(name, [filePath], '.', { retentionDays: 30 });
 
-  // Construct a shareable URL using GitHub Actions context
+  // Construct a direct artifact URL using GitHub Actions context
   const serverUrl = process.env['GITHUB_SERVER_URL'] ?? 'https://github.com';
   const repo = process.env['GITHUB_REPOSITORY'] ?? '';
   const runId = process.env['GITHUB_RUN_ID'] ?? '';
 
-  const url = `${serverUrl}/${repo}/actions/runs/${runId}/artifacts`;
+  const artifactId = response.id;
+  const url = artifactId
+    ? `${serverUrl}/${repo}/actions/runs/${runId}/artifacts/${artifactId}`
+    : `${serverUrl}/${repo}/actions/runs/${runId}`;
   return { url, size };
 }
 

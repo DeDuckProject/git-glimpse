@@ -5,7 +5,6 @@ import {
   loadConfig,
   runPipeline,
   postPRComment,
-  uploadArtifact,
   uploadToGitHubAssets,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
@@ -94,12 +93,14 @@ async function run(): Promise<void> {
       core.warning(`Pipeline completed with errors:\n${result.errors.join('\n')}`);
     }
 
+    const { owner, repo: repoName } = context.repo;
+
     let recordingUrl: string | undefined;
     if (result.recording) {
       core.info(
         `Recording created: ${result.recording.path} (${result.recording.sizeMB.toFixed(1)} MB)`
       );
-      const upload = await uploadArtifact(result.recording.path);
+      const upload = await uploadToGitHubAssets(token, owner, repoName, result.recording.path);
       recordingUrl = upload.url;
       core.setOutput('recording-url', recordingUrl);
     }
@@ -107,7 +108,6 @@ async function run(): Promise<void> {
     let screenshotUrls: string[] | undefined;
     if (result.screenshots && result.screenshots.length > 0) {
       core.info(`Uploading ${result.screenshots.length} screenshot(s)...`);
-      const { owner, repo: repoName } = context.repo;
       const uploadPromises = result.screenshots.map((screenshotPath) =>
         uploadToGitHubAssets(token, owner, repoName, screenshotPath)
       );
@@ -115,10 +115,9 @@ async function run(): Promise<void> {
       screenshotUrls = uploads.map((u) => u.url);
     }
 
-    const { owner, repo } = context.repo;
     const comment = await postPRComment(token, {
       owner,
-      repo,
+      repo: repoName,
       pullNumber,
       analysis: result.analysis,
       recordingUrl,

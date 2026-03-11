@@ -50,7 +50,10 @@ async function run(): Promise<void> {
 
   core.info(`Computing diff: ${baseSha}..${headSha}`);
   // Use execFileSync with args array — no shell, no injection risk
-  const diff = execFileSync('git', ['diff', `${baseSha}..${headSha}`], { encoding: 'utf-8' });
+  const diff = execFileSync('git', ['diff', `${baseSha}..${headSha}`], {
+    encoding: 'utf-8',
+    maxBuffer: 10 * 1024 * 1024, // 10 MB — large diffs can exceed the 1 MB default
+  });
 
   const baseUrl = resolveBaseUrl(config, previewUrlInput);
   if (!baseUrl) {

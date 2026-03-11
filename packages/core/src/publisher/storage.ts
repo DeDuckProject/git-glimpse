@@ -31,7 +31,7 @@ export async function uploadArtifact(filePath: string, artifactName?: string): P
   const repo = process.env['GITHUB_REPOSITORY'] ?? '';
   const runId = process.env['GITHUB_RUN_ID'] ?? '';
 
-  const url = `${serverUrl}/${repo}/actions/runs/${runId}/artifacts`;
+  const url = `${serverUrl}/${repo}/actions/runs/${runId}`;
   return { url, size };
 }
 

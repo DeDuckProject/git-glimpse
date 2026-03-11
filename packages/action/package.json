@@ -6,7 +6,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt --external @playwright/test --external playwright --external playwright-core && node scripts/patch-dist.cjs",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:@playwright/test --external:playwright-core --external:playwright --external:esbuild --sourcemap",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,7 +16,7 @@
     "@git-glimpse/core": "workspace:*"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.3",
+    "esbuild": "^0.21.5",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
     "@types/node": "^20.12.0"

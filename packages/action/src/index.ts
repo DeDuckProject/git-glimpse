@@ -103,6 +103,16 @@ async function run(): Promise<void> {
       core.setOutput('recording-url', recordingUrl);
     }
 
+    let screenshotUrls: string[] | undefined;
+    if (result.screenshots && result.screenshots.length > 0) {
+      core.info(`Uploading ${result.screenshots.length} screenshot(s) as artifacts...`);
+      const uploadPromises = result.screenshots.map((screenshotPath, i) =>
+        uploadArtifact(screenshotPath, `git-glimpse-screenshot-${i + 1}-${Date.now()}`)
+      );
+      const uploads = await Promise.all(uploadPromises);
+      screenshotUrls = uploads.map((u) => u.url);
+    }
+
     const { owner, repo } = context.repo;
     const comment = await postPRComment(token, {
       owner,
@@ -110,7 +120,7 @@ async function run(): Promise<void> {
       pullNumber,
       analysis: result.analysis,
       recordingUrl,
-      screenshots: result.screenshots,
+      screenshots: screenshotUrls,
       script: result.script,
     });
 

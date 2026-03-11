@@ -6,6 +6,8 @@ name: GitGlimpse Demo
 on:
   pull_request:
     types: [opened, synchronize]
+  issue_comment:
+    types: [created]
 
 jobs:
   demo:

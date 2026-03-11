@@ -4,7 +4,7 @@ const HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Test App</title>
+  <title>Test Demo App</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; background: #f5f5f5; }
     h1 { color: #333; }
@@ -43,7 +43,7 @@ const HTML = `<!DOCTYPE html>
       <button class="close-btn" id="close-modal" aria-label="Close">&times;</button>
       <h2>Virtual Try-On</h2>
       <p>See how these headphones look on you using your camera.</p>
-      <button id="start-tryon">Start Try-On</button>
+      <button id="start-tryon" style="background:#6366f1">Start Try-On</button>
     </div>
   </div>
 

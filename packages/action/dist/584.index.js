@@ -35123,7 +35123,7 @@ module.exports = from
 
 /***/ }),
 
-/***/ 47634:
+/***/ 25253:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
@@ -36256,7 +36256,7 @@ const {
 module.exports = Readable
 Readable.ReadableState = ReadableState
 const { EventEmitter: EE } = __webpack_require__(24434)
-const { Stream, prependListener } = __webpack_require__(47634)
+const { Stream, prependListener } = __webpack_require__(25253)
 const { Buffer } = __webpack_require__(20181)
 const { addAbortSignal } = __webpack_require__(57837)
 const eos = __webpack_require__(55480)
@@ -38121,7 +38121,7 @@ const {
 module.exports = Writable
 Writable.WritableState = WritableState
 const { EventEmitter: EE } = __webpack_require__(24434)
-const Stream = (__webpack_require__(47634).Stream)
+const Stream = (__webpack_require__(25253).Stream)
 const { Buffer } = __webpack_require__(20181)
 const destroyImpl = __webpack_require__(22178)
 const { addAbortSignal } = __webpack_require__(57837)
@@ -40252,7 +40252,7 @@ const eos = __webpack_require__(55480)
 const internalBuffer = {}
 const promises = __webpack_require__(9389)
 const utils = __webpack_require__(36949)
-const Stream = (module.exports = __webpack_require__(47634).Stream)
+const Stream = (module.exports = __webpack_require__(25253).Stream)
 Stream.isDestroyed = utils.isDestroyed
 Stream.isDisturbed = utils.isDisturbed
 Stream.isErrored = utils.isErrored

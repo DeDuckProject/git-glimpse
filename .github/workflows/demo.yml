@@ -23,8 +23,15 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
+        run: pnpm --filter @git-glimpse/core exec playwright install chromium --with-deps
 
       - name: Start example app
         run: node examples/simple-app/server.js &

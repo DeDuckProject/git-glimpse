@@ -42,6 +42,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
     maxDuration: 30,
     format: 'gif' as const,
     deviceScaleFactor: 2,
+    showMouseClicks: true,
   };
   const llm = config.llm ?? { provider: 'anthropic' as const, model: 'claude-sonnet-4-6' };
 

@@ -34,6 +34,7 @@ export const RecordingConfigSchema = z.object({
   format: z.enum(['gif', 'mp4', 'webm']).default('gif'),
   maxDuration: z.number().default(30),
   deviceScaleFactor: z.number().default(2),
+  showMouseClicks: z.boolean().default(true),
 });
 
 export const LLMConfigSchema = z.object({

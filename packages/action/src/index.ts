@@ -7,7 +7,6 @@ import {
   runPipeline,
   postPRComment,
   postSkipComment,
-  uploadArtifact,
   uploadToGitHubAssets,
   evaluateTrigger,
   parseGlimpseCommand,
@@ -178,12 +177,14 @@ async function run(): Promise<void> {
       core.warning(`Pipeline completed with errors:\n${result.errors.join('\n')}`);
     }
 
+    const { owner, repo: repoName } = context.repo;
+
     let recordingUrl: string | undefined;
     if (result.recording) {
       core.info(
         `Recording created: ${result.recording.path} (${result.recording.sizeMB.toFixed(1)} MB)`
       );
-      const upload = await uploadArtifact(result.recording.path);
+      const upload = await uploadToGitHubAssets(token, owner, repoName, result.recording.path);
       recordingUrl = upload.url;
       core.setOutput('recording-url', recordingUrl);
     }
@@ -200,7 +201,7 @@ async function run(): Promise<void> {
 
     const comment = await postPRComment(token, {
       owner,
-      repo,
+      repo: repoName,
       pullNumber,
       analysis: result.analysis,
       recordingUrl,

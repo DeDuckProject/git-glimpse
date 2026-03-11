@@ -122,8 +122,11 @@ function buildCommentBody(options: CommentOptions): string {
 
   const rerunSection = rerunUrl ? `\n\n[↺ Re-run demo](${rerunUrl})` : '';
 
+  const logoUrl =
+    'https://raw.githubusercontent.com/DeDuckProject/git-glimpse/main/assets/logo_square_small.png';
+
   return `${COMMENT_MARKER}
-## 🎬 UI Demo Preview
+## <img src="${logoUrl}" width="40" height="40" align="absmiddle" alt="git-glimpse logo" /> UI Demo Preview
 
 **Changes detected in**: ${changedFilesList}${moreFiles}
 

@@ -5,6 +5,7 @@ export const DEFAULT_RECORDING: RecordingConfig = {
   format: 'gif',
   maxDuration: 30,
   deviceScaleFactor: 2,
+  showMouseClicks: true,
 };
 
 export const DEFAULT_LLM: LLMConfig = {

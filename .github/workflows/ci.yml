@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run unit tests
+        run: pnpm test
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @git-glimpse/core exec playwright install chromium --with-deps
+
+      - name: Start example app
+        run: node examples/simple-app/server.js &
+
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:3000 && echo "App ready" && exit 0
+            echo "Waiting... ($i)"
+            sleep 1
+          done
+          echo "App did not become ready" && exit 1
+
+      - name: Run integration tests
+        run: pnpm test:integration

@@ -6,6 +6,7 @@ import {
   runPipeline,
   postPRComment,
   uploadArtifact,
+  uploadToGitHubAssets,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
 
@@ -105,9 +106,10 @@ async function run(): Promise<void> {
 
     let screenshotUrls: string[] | undefined;
     if (result.screenshots && result.screenshots.length > 0) {
-      core.info(`Uploading ${result.screenshots.length} screenshot(s) as artifacts...`);
-      const uploadPromises = result.screenshots.map((screenshotPath, i) =>
-        uploadArtifact(screenshotPath, `git-glimpse-screenshot-${i + 1}-${Date.now()}`)
+      core.info(`Uploading ${result.screenshots.length} screenshot(s)...`);
+      const { owner, repo: repoName } = context.repo;
+      const uploadPromises = result.screenshots.map((screenshotPath) =>
+        uploadToGitHubAssets(token, owner, repoName, screenshotPath)
       );
       const uploads = await Promise.all(uploadPromises);
       screenshotUrls = uploads.map((u) => u.url);

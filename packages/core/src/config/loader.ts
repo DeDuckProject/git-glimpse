@@ -1,8 +1,35 @@
 import { pathToFileURL } from 'node:url';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, writeFileSync, unlinkSync } from 'node:fs';
+import { resolve, extname } from 'node:path';
+import { tmpdir } from 'node:os';
 import { GitGlimpseConfigSchema, type GitGlimpseConfig } from './schema.js';
 import { DEFAULT_RECORDING, DEFAULT_LLM } from './defaults.js';
+
+async function importConfigFile(filePath: string): Promise<unknown> {
+  if (extname(filePath) !== '.ts') {
+    const mod = await import(pathToFileURL(filePath).href);
+    return mod.default ?? mod;
+  }
+
+  // Transpile .ts config via esbuild before importing
+  const { build } = await import('esbuild');
+  const result = await build({
+    entryPoints: [filePath],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    write: false,
+  });
+
+  const tmpFile = resolve(tmpdir(), `git-glimpse-config-${Date.now()}.mjs`);
+  try {
+    writeFileSync(tmpFile, result.outputFiles[0].text);
+    const mod = await import(pathToFileURL(tmpFile).href);
+    return mod.default ?? mod;
+  } finally {
+    try { unlinkSync(tmpFile); } catch { /* ignore */ }
+  }
+}
 
 export async function loadConfig(configPath?: string): Promise<GitGlimpseConfig> {
   const candidates = configPath
@@ -12,8 +39,7 @@ export async function loadConfig(configPath?: string): Promise<GitGlimpseConfig>
   for (const candidate of candidates) {
     const fullPath = resolve(process.cwd(), candidate);
     if (existsSync(fullPath)) {
-      const mod = await import(pathToFileURL(fullPath).href);
-      const raw = mod.default ?? mod;
+      const raw = await importConfigFile(fullPath);
       return parseConfig(raw);
     }
   }

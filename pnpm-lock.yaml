@@ -36,6 +36,9 @@ importers:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.37
+      '@vercel/ncc':
+        specifier: ^0.38.3
+        version: 0.38.4
       typescript:
         specifier: ^5.4.5
         version: 5.9.3
@@ -83,6 +86,9 @@ importers:
         specifier: ^3.23.4
         version: 3.25.76
     devDependencies:
+      '@actions/artifact':
+        specifier: ^2.1.11
+        version: 2.3.2
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.37
@@ -616,6 +622,10 @@ packages:
   '@typespec/ts-http-runtime@0.3.4':
     resolution: {integrity: sha512-CI0NhTrz4EBaa0U+HaaUZrJhPoso8sG7ZFya8uQoBA57fjzrjRSv87ekCjLZOFExN+gXE/z0xuN2QfH4H2HrLQ==}
     engines: {node: '>=20.0.0'}
+
+  '@vercel/ncc@0.38.4':
+    resolution: {integrity: sha512-8LwjnlP39s08C08J5NstzriPvW1SP8Zfpp1BvC2sI35kPeZnHfxVkCwu4/+Wodgnd60UtT1n8K8zw+Mp7J9JmQ==}
+    hasBin: true
 
   '@vitest/expect@1.6.1':
     resolution: {integrity: sha512-jXL+9+ZNIJKruofqXuuTClf44eSpcHlgj3CiuNihUF3Ioujtmc0zIa3UJOW5RjDK1YLBJZnWBlPuqhYycLioog==}
@@ -2028,6 +2038,8 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+
+  '@vercel/ncc@0.38.4': {}
 
   '@vitest/expect@1.6.1':
     dependencies:

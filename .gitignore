@@ -1,5 +1,6 @@
 node_modules/
 dist/
+!packages/action/dist/
 *.js
 *.d.ts
 *.d.ts.map

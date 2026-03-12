@@ -3,7 +3,7 @@ import { existsSync, writeFileSync, unlinkSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GitGlimpseConfigSchema, type GitGlimpseConfig } from './schema.js';
-import { DEFAULT_RECORDING, DEFAULT_LLM } from './defaults.js';
+import { DEFAULT_RECORDING, DEFAULT_LLM, DEFAULT_TRIGGER } from './defaults.js';
 
 async function importConfigFile(filePath: string): Promise<unknown> {
   if (extname(filePath) !== '.ts') {
@@ -62,5 +62,6 @@ export function parseConfig(raw: unknown): GitGlimpseConfig {
     ...config,
     recording: { ...DEFAULT_RECORDING, ...config.recording },
     llm: { ...DEFAULT_LLM, ...config.llm },
+    trigger: { ...DEFAULT_TRIGGER, ...config.trigger },
   };
 }

@@ -108,6 +108,13 @@ function buildMouseClickOverlayEvalScript(): string {
   cursor.className = 'gg-cursor';
   document.body.appendChild(cursor);
 
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(cursor)) {
+      document.body.appendChild(cursor);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: false });
+
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';
     cursor.style.top = e.clientY + 'px';

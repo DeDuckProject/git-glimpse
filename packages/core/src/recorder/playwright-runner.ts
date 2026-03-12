@@ -29,6 +29,14 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
     const context = await createContext(browser, recording, outputDir);
     const page = await context.newPage();
 
+    // Inject the cursor overlay after every page load (fires after app JS/hydration
+    // has run, so the cursor won't be removed by framework re-renders).
+    if (recording.showMouseClicks !== false) {
+      page.on('load', () => {
+        page.evaluate(buildMouseClickOverlayEvalScript()).catch(() => {});
+      });
+    }
+
     // Set a base URL for relative navigation
     await page.goto(baseUrl);
 
@@ -65,62 +73,53 @@ async function createContext(
     deviceScaleFactor: recording.deviceScaleFactor,
   });
 
-  if (recording.showMouseClicks !== false) {
-    await context.addInitScript(buildMouseClickOverlayScript());
-  }
-
   return context;
 }
 
-function buildMouseClickOverlayScript(): string {
+function buildMouseClickOverlayEvalScript(): string {
   return `(() => {
-  let cursor = null;
+  if (document.querySelector('.gg-cursor')) return;
+
+  const style = document.createElement('style');
+  style.textContent = \`
+    .gg-cursor {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255, 80, 0, 0.85);
+      border: 2px solid white;
+      position: fixed; pointer-events: none; z-index: 999999;
+      transform: translate(-50%, -50%);
+      transition: left 30ms linear, top 30ms linear;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+    @keyframes gg-ripple {
+      from { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      to   { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+    }
+    .gg-ripple {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 3px solid rgba(255, 80, 0, 0.9);
+      position: fixed; pointer-events: none; z-index: 999998;
+      animation: gg-ripple 500ms ease-out forwards;
+    }
+  \`;
+  document.head.appendChild(style);
+
+  const cursor = document.createElement('div');
+  cursor.className = 'gg-cursor';
+  document.body.appendChild(cursor);
 
   document.addEventListener('mousemove', (e) => {
-    if (cursor) {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
-    }
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
   });
 
   document.addEventListener('click', (e) => {
-    if (!document.body) return;
     const ripple = document.createElement('div');
     ripple.className = 'gg-ripple';
     ripple.style.left = e.clientX + 'px';
     ripple.style.top = e.clientY + 'px';
     document.body.appendChild(ripple);
     setTimeout(() => ripple.remove(), 500);
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const style = document.createElement('style');
-    style.textContent = \`
-      .gg-cursor {
-        width: 16px; height: 16px; border-radius: 50%;
-        background: rgba(255, 80, 0, 0.85);
-        border: 2px solid white;
-        position: fixed; pointer-events: none; z-index: 999999;
-        transform: translate(-50%, -50%);
-        transition: left 30ms linear, top 30ms linear;
-        box-shadow: 0 0 4px rgba(0,0,0,0.4);
-      }
-      @keyframes gg-ripple {
-        from { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-        to   { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
-      }
-      .gg-ripple {
-        width: 24px; height: 24px; border-radius: 50%;
-        border: 3px solid rgba(255, 80, 0, 0.9);
-        position: fixed; pointer-events: none; z-index: 999998;
-        animation: gg-ripple 500ms ease-out forwards;
-      }
-    \`;
-    document.head.appendChild(style);
-
-    cursor = document.createElement('div');
-    cursor.className = 'gg-cursor';
-    document.body.appendChild(cursor);
   });
 })();`;
 }

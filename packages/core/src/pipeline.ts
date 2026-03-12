@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { parseDiff, isUIFile } from './analyzer/diff-parser.js';
+import { parseDiff } from './analyzer/diff-parser.js';
+import { filterUIFiles } from './trigger/file-filter.js';
 import { detectRoutes } from './analyzer/route-detector.js';
 import { summarizeChanges } from './analyzer/change-summarizer.js';
 import { generateDemoScript } from './generator/script-generator.js';
@@ -41,12 +42,13 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
     maxDuration: 30,
     format: 'gif' as const,
     deviceScaleFactor: 2,
+    showMouseClicks: true,
   };
   const llm = config.llm ?? { provider: 'anthropic' as const, model: 'claude-sonnet-4-6' };
 
   // 1. Parse diff
   const parsedDiff = parseDiff(diff);
-  const uiFiles = parsedDiff.files.filter((f) => isUIFile(f.path));
+  const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
   if (uiFiles.length === 0) {
     return {
       success: false,

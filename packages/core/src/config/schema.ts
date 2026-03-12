@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+export const TriggerConfigSchema = z.object({
+  mode: z.enum(['auto', 'on-demand', 'smart']).default('auto'),
+  include: z.array(z.string()).optional(),
+  exclude: z.array(z.string()).optional(),
+  threshold: z.number().default(5),
+  commentCommand: z.string().default('/glimpse'),
+  skipComment: z.boolean().default(true),
+});
+
+export type TriggerConfig = z.infer<typeof TriggerConfigSchema>;
+
 export const AppConfigSchema = z.object({
   startCommand: z.string().optional(),
   readyWhen: z
@@ -37,6 +48,7 @@ export const GitGlimpseConfigSchema = z.object({
   setup: z.string().optional(),
   recording: RecordingConfigSchema.optional(),
   llm: LLMConfigSchema.optional(),
+  trigger: TriggerConfigSchema.optional(),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;

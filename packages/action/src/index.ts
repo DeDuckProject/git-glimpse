@@ -3,9 +3,14 @@ import * as github from '@actions/github';
 import { execFileSync, spawn } from 'node:child_process';
 import {
   loadConfig,
+  parseDiff,
   runPipeline,
   postPRComment,
+  postSkipComment,
   uploadToGitHubAssets,
+  evaluateTrigger,
+  parseGlimpseCommand,
+  DEFAULT_TRIGGER,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
 
@@ -32,20 +37,16 @@ async function run(): Promise<void> {
     return;
   }
 
-  if (context.eventName !== 'pull_request') {
-    core.info('git-glimpse only runs on pull_request events. Skipping.');
-    return;
-  }
-
-  const pullNumber = context.payload.pull_request?.number;
-  if (!pullNumber) {
-    core.setFailed('Could not determine PR number');
+  const eventName = context.eventName;
+  if (eventName !== 'pull_request' && eventName !== 'issue_comment') {
+    core.info(`git-glimpse does not handle '${eventName}' events. Skipping.`);
     return;
   }
 
   const configPath = core.getInput('config-path') || undefined;
   const previewUrlInput = core.getInput('preview-url') || undefined;
   const startCommandInput = core.getInput('start-command') || undefined;
+  const triggerModeInput = core.getInput('trigger-mode') || undefined;
 
   let config = await loadConfig(configPath);
   if (previewUrlInput) {
@@ -54,17 +55,100 @@ async function run(): Promise<void> {
   if (startCommandInput) {
     config = { ...config, app: { ...config.app, startCommand: startCommandInput } };
   }
+  if (triggerModeInput && ['auto', 'on-demand', 'smart'].includes(triggerModeInput)) {
+    config = {
+      ...config,
+      trigger: {
+        ...DEFAULT_TRIGGER,
+        ...config.trigger,
+        mode: triggerModeInput as 'auto' | 'on-demand' | 'smart',
+      },
+    };
+  }
 
-  const baseSha = context.payload.pull_request?.base?.sha;
-  const headSha = context.payload.pull_request?.head?.sha;
-  if (!baseSha || !headSha) {
-    core.setFailed('Could not determine PR base/head SHA');
-    return;
+  const triggerConfig = config.trigger ?? DEFAULT_TRIGGER;
+  const { owner, repo } = context.repo;
+  const octokit = github.getOctokit(token);
+
+  // Resolve PR number, base/head SHAs, and event type
+  let pullNumber: number;
+  let baseSha: string;
+  let headSha: string;
+  let eventType: 'push' | 'comment';
+  let command = null;
+
+  if (eventName === 'issue_comment') {
+    // Only handle comments on PRs, not plain issues
+    if (!context.payload.issue?.pull_request) {
+      core.info('Comment is on an issue, not a PR. Skipping.');
+      return;
+    }
+
+    const commentBody: string = context.payload.comment?.body ?? '';
+    command = parseGlimpseCommand(commentBody, triggerConfig.commentCommand);
+    if (!command) {
+      core.info(`No ${triggerConfig.commentCommand} command found in comment. Skipping.`);
+      return;
+    }
+
+    pullNumber = context.payload.issue!.number;
+    eventType = 'comment';
+
+    // Acknowledge the command with a reaction
+    try {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: context.payload.comment!.id,
+        content: 'eyes',
+      });
+    } catch {
+      // Non-fatal: reaction is best-effort
+    }
+
+    // Fetch PR details to get base/head SHAs
+    const pr = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+    baseSha = pr.data.base.sha;
+    headSha = pr.data.head.sha;
+  } else {
+    // pull_request event
+    pullNumber = context.payload.pull_request?.number!;
+    if (!pullNumber) {
+      core.setFailed('Could not determine PR number');
+      return;
+    }
+
+    baseSha = context.payload.pull_request?.base?.sha;
+    headSha = context.payload.pull_request?.head?.sha;
+    if (!baseSha || !headSha) {
+      core.setFailed('Could not determine PR base/head SHA');
+      return;
+    }
+
+    eventType = 'push';
   }
 
   core.info(`Computing diff: ${baseSha}..${headSha}`);
-  // Stream git diff to avoid maxBuffer limits on large diffs (e.g. bundled dist files)
   const diff = await streamCommand('git', ['diff', `${baseSha}..${headSha}`]);
+
+  const parsedDiff = parseDiff(diff);
+
+  const decision = evaluateTrigger({
+    files: parsedDiff.files,
+    triggerConfig,
+    eventType,
+    command,
+  });
+
+  core.info(`Trigger decision: ${decision.shouldRun ? 'RUN' : 'SKIP'} — ${decision.reason}`);
+
+  if (!decision.shouldRun) {
+    if (triggerConfig.skipComment) {
+      await postSkipComment(token, { owner, repo, pullNumber, reason: decision.reason });
+    }
+    core.setOutput('success', 'false');
+    return;
+  }
 
   const baseUrl = resolveBaseUrl(config, previewUrlInput);
   if (!baseUrl) {
@@ -109,7 +193,7 @@ async function run(): Promise<void> {
     if (result.screenshots && result.screenshots.length > 0) {
       core.info(`Uploading ${result.screenshots.length} screenshot(s)...`);
       const uploadPromises = result.screenshots.map((screenshotPath) =>
-        uploadToGitHubAssets(token, owner, repoName, screenshotPath)
+        uploadToGitHubAssets(token, owner, repo, screenshotPath)
       );
       const uploads = await Promise.all(uploadPromises);
       screenshotUrls = uploads.map((u) => u.url);

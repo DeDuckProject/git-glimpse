@@ -30,22 +30,49 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build action check script
+        run: pnpm --filter @git-glimpse/action build
+
+      # Check whether the pipeline should run before installing heavy dependencies.
+      # Subsequent steps are gated on this output to skip ffmpeg/Playwright when
+      # the trigger config (on-demand, smart, etc.) decides to skip the run.
+      - name: Check if glimpse should run
+        id: check
+        run: node packages/action/dist/check.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_CONFIG-PATH: examples/simple-app/git-glimpse.config.ts
+          INPUT_TRIGGER-MODE: ''
+
       - name: Install FFmpeg
+        if: steps.check.outputs.should-run == 'true'
         run: sudo apt-get install -y ffmpeg
 
+      - name: Cache Playwright browsers
+        if: steps.check.outputs.should-run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-chromium-
+
       - name: Install Playwright Chromium
+        if: steps.check.outputs.should-run == 'true'
         run: pnpm --filter @git-glimpse/core exec playwright install chromium --with-deps
 
       - name: Start example app
+        if: steps.check.outputs.should-run == 'true'
         run: node examples/simple-app/server.js &
 
       - name: Wait for app to be ready
+        if: steps.check.outputs.should-run == 'true'
         run: |
           for i in $(seq 1 15); do
             curl -sf http://localhost:3000 && echo "App ready" && exit 0
@@ -55,6 +82,7 @@ jobs:
           echo "App did not become ready" && exit 1
 
       - uses: ./packages/action
+        if: steps.check.outputs.should-run == 'true'
         with:
           preview-url: 'http://localhost:3000'
           config-path: examples/simple-app/git-glimpse.config.ts

@@ -27,29 +27,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
-      - uses: pnpm/action-setup@v4
-
       - name: Install dependencies
         run: pnpm install
-
-      - name: Build action check script
-        run: pnpm --filter @git-glimpse/action build
 
       # Check whether the pipeline should run before installing heavy dependencies.
       # Subsequent steps are gated on this output to skip ffmpeg/Playwright when
       # the trigger config (on-demand, smart, etc.) decides to skip the run.
-      - name: Check if glimpse should run
+      - uses: ./check-trigger
         id: check
-        run: node packages/action/dist/check.js
+        with:
+          config-path: examples/simple-app/git-glimpse.config.ts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INPUT_CONFIG-PATH: examples/simple-app/git-glimpse.config.ts
-          INPUT_TRIGGER-MODE: ''
 
       - name: Install FFmpeg
         if: steps.check.outputs.should-run == 'true'

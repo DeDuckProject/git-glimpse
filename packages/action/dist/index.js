@@ -23860,11 +23860,11 @@ var require_github = __commonJS({
     var Context = __importStar(require_context());
     var utils_1 = require_utils4();
     exports2.context = new Context.Context();
-    function getOctokit(token, options, ...additionalPlugins) {
+    function getOctokit2(token, options, ...additionalPlugins) {
       const GitHubWithPlugins = utils_1.GitHub.plugin(...additionalPlugins);
       return new GitHubWithPlugins((0, utils_1.getOctokitOptions)(token, options));
     }
-    exports2.getOctokit = getOctokit;
+    exports2.getOctokit = getOctokit2;
   }
 });
 
@@ -41621,6 +41621,30 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
 minimatch.unescape = unescape;
 
+// ../core/dist/trigger/file-filter.js
+function filterUIFiles(files, triggerConfig) {
+  const { include, exclude } = triggerConfig ?? {};
+  if (!include && !exclude) {
+    return files.filter((f2) => isUIFile(f2.path));
+  }
+  return files.filter((f2) => {
+    if (include && include.length > 0) {
+      const matched = include.some((pattern) => minimatch(f2.path, pattern, { matchBase: true }));
+      if (!matched)
+        return false;
+    }
+    if (exclude && exclude.length > 0) {
+      const excluded = exclude.some((pattern) => minimatch(f2.path, pattern, { matchBase: true }));
+      if (excluded)
+        return false;
+    }
+    return true;
+  });
+}
+function computeChangeMagnitude(files) {
+  return files.reduce((sum, f2) => sum + f2.additions + f2.deletions, 0);
+}
+
 // ../core/dist/analyzer/route-detector.js
 function detectRoutes(diff, options) {
   const mappings = [];
@@ -41897,7 +41921,7 @@ async function runScriptAndRecord(options) {
   }
 }
 async function createContext(browser, recording, outputDir) {
-  return browser.newContext({
+  const context2 = await browser.newContext({
     recordVideo: {
       dir: outputDir,
       size: recording.viewport
@@ -41905,6 +41929,55 @@ async function createContext(browser, recording, outputDir) {
     viewport: recording.viewport,
     deviceScaleFactor: recording.deviceScaleFactor
   });
+  if (recording.showMouseClicks !== false) {
+    await context2.addInitScript(buildMouseClickOverlayScript());
+  }
+  return context2;
+}
+function buildMouseClickOverlayScript() {
+  return `(() => {
+  const style = document.createElement('style');
+  style.textContent = \`
+    .gg-cursor {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255, 80, 0, 0.85);
+      border: 2px solid white;
+      position: fixed; pointer-events: none; z-index: 999999;
+      transform: translate(-50%, -50%);
+      transition: left 30ms linear, top 30ms linear;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+    @keyframes gg-ripple {
+      from { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      to   { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+    }
+    .gg-ripple {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 3px solid rgba(255, 80, 0, 0.9);
+      position: fixed; pointer-events: none; z-index: 999998;
+      animation: gg-ripple 500ms ease-out forwards;
+    }
+  \`;
+  document.head.appendChild(style);
+
+  const cursor = document.createElement('div');
+  cursor.className = 'gg-cursor';
+  document.body.appendChild(cursor);
+
+  document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  document.addEventListener('click', (e) => {
+    const ripple = document.createElement('div');
+    ripple.className = 'gg-ripple';
+    ripple.style.left = e.clientX + 'px';
+    ripple.style.top = e.clientY + 'px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+  });
+})();`;
 }
 async function executeScript(script, page, _baseUrl) {
   const { writeFileSync: writeFileSync2, unlinkSync: unlinkSync2 } = await import("node:fs");
@@ -42112,11 +42185,12 @@ async function runPipeline(options) {
     viewport: { width: 1280, height: 720 },
     maxDuration: 30,
     format: "gif",
-    deviceScaleFactor: 2
+    deviceScaleFactor: 2,
+    showMouseClicks: true
   };
   const llm = config.llm ?? { provider: "anthropic", model: "claude-sonnet-4-6" };
   const parsedDiff = parseDiff(diff);
-  const uiFiles = parsedDiff.files.filter((f2) => isUIFile(f2.path));
+  const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
   if (uiFiles.length === 0) {
     return {
       success: false,
@@ -46231,6 +46305,14 @@ var coerce = {
 var NEVER = INVALID;
 
 // ../core/dist/config/schema.js
+var TriggerConfigSchema = external_exports.object({
+  mode: external_exports.enum(["auto", "on-demand", "smart"]).default("auto"),
+  include: external_exports.array(external_exports.string()).optional(),
+  exclude: external_exports.array(external_exports.string()).optional(),
+  threshold: external_exports.number().default(5),
+  commentCommand: external_exports.string().default("/glimpse"),
+  skipComment: external_exports.boolean().default(true)
+});
 var AppConfigSchema = external_exports.object({
   startCommand: external_exports.string().optional(),
   readyWhen: external_exports.object({
@@ -46248,7 +46330,8 @@ var RecordingConfigSchema = external_exports.object({
   }).default({ width: 1280, height: 720 }),
   format: external_exports.enum(["gif", "mp4", "webm"]).default("gif"),
   maxDuration: external_exports.number().default(30),
-  deviceScaleFactor: external_exports.number().default(2)
+  deviceScaleFactor: external_exports.number().default(2),
+  showMouseClicks: external_exports.boolean().default(true)
 });
 var LLMConfigSchema = external_exports.object({
   provider: external_exports.enum(["anthropic", "openai"]).default("anthropic"),
@@ -46259,7 +46342,8 @@ var GitGlimpseConfigSchema = external_exports.object({
   routeMap: external_exports.record(external_exports.string()).optional(),
   setup: external_exports.string().optional(),
   recording: RecordingConfigSchema.optional(),
-  llm: LLMConfigSchema.optional()
+  llm: LLMConfigSchema.optional(),
+  trigger: TriggerConfigSchema.optional()
 });
 
 // ../core/dist/config/defaults.js
@@ -46267,11 +46351,18 @@ var DEFAULT_RECORDING = {
   viewport: { width: 1280, height: 720 },
   format: "gif",
   maxDuration: 30,
-  deviceScaleFactor: 2
+  deviceScaleFactor: 2,
+  showMouseClicks: true
 };
 var DEFAULT_LLM = {
   provider: "anthropic",
   model: "claude-sonnet-4-6"
+};
+var DEFAULT_TRIGGER = {
+  mode: "auto",
+  threshold: 5,
+  commentCommand: "/glimpse",
+  skipComment: true
 };
 
 // ../core/dist/config/loader.js
@@ -46323,13 +46414,41 @@ ${errors}`);
   return {
     ...config,
     recording: { ...DEFAULT_RECORDING, ...config.recording },
-    llm: { ...DEFAULT_LLM, ...config.llm }
+    llm: { ...DEFAULT_LLM, ...config.llm },
+    trigger: { ...DEFAULT_TRIGGER, ...config.trigger }
   };
 }
 
 // ../core/dist/publisher/github-comment.js
 var import_rest = __toESM(require_dist_node14(), 1);
 var COMMENT_MARKER = "<!-- git-glimpse-demo -->";
+async function postSkipComment(token, options) {
+  const octokit = new import_rest.Octokit({ auth: token });
+  const body = `${COMMENT_MARKER}
+## GitGlimpse \u2014 Skipped
+
+${options.reason}
+
+---
+*Generated by [git-glimpse](https://github.com/git-glimpse/git-glimpse)*`;
+  const existing = await findExistingComment(octokit, options);
+  if (existing) {
+    const response2 = await octokit.rest.issues.updateComment({
+      owner: options.owner,
+      repo: options.repo,
+      comment_id: existing.id,
+      body
+    });
+    return { commentId: response2.data.id, url: response2.data.html_url };
+  }
+  const response = await octokit.rest.issues.createComment({
+    owner: options.owner,
+    repo: options.repo,
+    issue_number: options.pullNumber,
+    body
+  });
+  return { commentId: response.data.id, url: response.data.html_url };
+}
 async function postPRComment(token, options) {
   const octokit = new import_rest.Octokit({ auth: token });
   const body = buildCommentBody(options);
@@ -46369,8 +46488,9 @@ function buildCommentBody(options) {
   const rerunSection = rerunUrl ? `
 
 [\u21BA Re-run demo](${rerunUrl})` : "";
+  const logoUrl = "https://raw.githubusercontent.com/DeDuckProject/git-glimpse/main/assets/logo_square_small.png";
   return `${COMMENT_MARKER}
-## \u{1F3AC} UI Demo Preview
+## <img src="${logoUrl}" width="40" height="40" align="absmiddle" alt="git-glimpse logo" /> UI Demo Preview
 
 **Changes detected in**: ${changedFilesList}${moreFiles}
 
@@ -46421,6 +46541,84 @@ async function uploadToGitHubAssets(token, owner, repo, filePath) {
   return { url: asset.data.browser_download_url, size };
 }
 
+// ../core/dist/trigger/command-parser.js
+function parseGlimpseCommand(commentBody, commandPrefix = "/glimpse") {
+  const lines = commentBody.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed.toLowerCase().startsWith(commandPrefix.toLowerCase()))
+      continue;
+    const rest = trimmed.slice(commandPrefix.length);
+    if (rest.length > 0 && !/^\s/.test(rest))
+      continue;
+    const args = rest.trim().split(/\s+/).filter(Boolean);
+    const force = args.includes("--force");
+    let route;
+    const routeIndex = args.indexOf("--route");
+    if (routeIndex !== -1 && args[routeIndex + 1]) {
+      route = args[routeIndex + 1];
+    }
+    return { force, route };
+  }
+  return null;
+}
+
+// ../core/dist/trigger/index.js
+function evaluateTrigger(opts) {
+  const { files, triggerConfig, eventType, command } = opts;
+  if (command?.force) {
+    return {
+      shouldRun: true,
+      reason: "Force flag provided.",
+      matchedFiles: files.map((f2) => f2.path),
+      triggerSource: "force"
+    };
+  }
+  if (eventType === "comment") {
+    const matched2 = filterUIFiles(files, triggerConfig);
+    return {
+      shouldRun: true,
+      reason: "Triggered via comment command.",
+      matchedFiles: matched2.map((f2) => f2.path),
+      triggerSource: "comment"
+    };
+  }
+  if (triggerConfig.mode === "on-demand") {
+    return {
+      shouldRun: false,
+      reason: `On-demand mode is enabled. Comment \`${triggerConfig.commentCommand}\` on this PR to generate a demo.`,
+      matchedFiles: [],
+      triggerSource: "auto"
+    };
+  }
+  const matched = filterUIFiles(files, triggerConfig);
+  if (matched.length === 0) {
+    return {
+      shouldRun: false,
+      reason: `No UI-relevant files detected in this diff. Comment \`${triggerConfig.commentCommand} --force\` to generate a demo anyway.`,
+      matchedFiles: [],
+      triggerSource: "auto"
+    };
+  }
+  if (triggerConfig.mode === "smart") {
+    const magnitude = computeChangeMagnitude(matched);
+    if (magnitude < triggerConfig.threshold) {
+      return {
+        shouldRun: false,
+        reason: `Changes are below the threshold (${magnitude}/${triggerConfig.threshold} lines changed). Comment \`${triggerConfig.commentCommand} --force\` to generate a demo anyway.`,
+        matchedFiles: matched.map((f2) => f2.path),
+        triggerSource: "auto"
+      };
+    }
+  }
+  return {
+    shouldRun: true,
+    reason: `${matched.length} UI file(s) changed.`,
+    matchedFiles: matched.map((f2) => f2.path),
+    triggerSource: "auto"
+  };
+}
+
 // src/index.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -46442,18 +46640,15 @@ async function run() {
     core.setFailed("GITHUB_TOKEN is required");
     return;
   }
-  if (context2.eventName !== "pull_request") {
-    core.info("git-glimpse only runs on pull_request events. Skipping.");
-    return;
-  }
-  const pullNumber = context2.payload.pull_request?.number;
-  if (!pullNumber) {
-    core.setFailed("Could not determine PR number");
+  const eventName = context2.eventName;
+  if (eventName !== "pull_request" && eventName !== "issue_comment") {
+    core.info(`git-glimpse does not handle '${eventName}' events. Skipping.`);
     return;
   }
   const configPath = core.getInput("config-path") || void 0;
   const previewUrlInput = core.getInput("preview-url") || void 0;
   const startCommandInput = core.getInput("start-command") || void 0;
+  const triggerModeInput = core.getInput("trigger-mode") || void 0;
   let config = await loadConfig(configPath);
   if (previewUrlInput) {
     config = { ...config, app: { ...config.app, previewUrl: previewUrlInput } };
@@ -46461,14 +46656,80 @@ async function run() {
   if (startCommandInput) {
     config = { ...config, app: { ...config.app, startCommand: startCommandInput } };
   }
-  const baseSha = context2.payload.pull_request?.base?.sha;
-  const headSha = context2.payload.pull_request?.head?.sha;
-  if (!baseSha || !headSha) {
-    core.setFailed("Could not determine PR base/head SHA");
-    return;
+  if (triggerModeInput && ["auto", "on-demand", "smart"].includes(triggerModeInput)) {
+    config = {
+      ...config,
+      trigger: {
+        ...DEFAULT_TRIGGER,
+        ...config.trigger,
+        mode: triggerModeInput
+      }
+    };
+  }
+  const triggerConfig = config.trigger ?? DEFAULT_TRIGGER;
+  const { owner, repo } = context2.repo;
+  const octokit = github.getOctokit(token);
+  let pullNumber;
+  let baseSha;
+  let headSha;
+  let eventType;
+  let command = null;
+  if (eventName === "issue_comment") {
+    if (!context2.payload.issue?.pull_request) {
+      core.info("Comment is on an issue, not a PR. Skipping.");
+      return;
+    }
+    const commentBody = context2.payload.comment?.body ?? "";
+    command = parseGlimpseCommand(commentBody, triggerConfig.commentCommand);
+    if (!command) {
+      core.info(`No ${triggerConfig.commentCommand} command found in comment. Skipping.`);
+      return;
+    }
+    pullNumber = context2.payload.issue.number;
+    eventType = "comment";
+    try {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: context2.payload.comment.id,
+        content: "eyes"
+      });
+    } catch {
+    }
+    const pr2 = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+    baseSha = pr2.data.base.sha;
+    headSha = pr2.data.head.sha;
+  } else {
+    pullNumber = context2.payload.pull_request?.number;
+    if (!pullNumber) {
+      core.setFailed("Could not determine PR number");
+      return;
+    }
+    baseSha = context2.payload.pull_request?.base?.sha;
+    headSha = context2.payload.pull_request?.head?.sha;
+    if (!baseSha || !headSha) {
+      core.setFailed("Could not determine PR base/head SHA");
+      return;
+    }
+    eventType = "push";
   }
   core.info(`Computing diff: ${baseSha}..${headSha}`);
   const diff = await streamCommand("git", ["diff", `${baseSha}..${headSha}`]);
+  const parsedDiff = parseDiff(diff);
+  const decision = evaluateTrigger({
+    files: parsedDiff.files,
+    triggerConfig,
+    eventType,
+    command
+  });
+  core.info(`Trigger decision: ${decision.shouldRun ? "RUN" : "SKIP"} \u2014 ${decision.reason}`);
+  if (!decision.shouldRun) {
+    if (triggerConfig.skipComment) {
+      await postSkipComment(token, { owner, repo, pullNumber, reason: decision.reason });
+    }
+    core.setOutput("success", "false");
+    return;
+  }
   const baseUrl = resolveBaseUrl(config, previewUrlInput);
   if (!baseUrl) {
     core.setFailed(
@@ -46492,13 +46753,13 @@ async function run() {
       core.warning(`Pipeline completed with errors:
 ${result.errors.join("\n")}`);
     }
-    const { owner, repo: repoName } = context2.repo;
+    const { owner: owner2, repo: repoName } = context2.repo;
     let recordingUrl;
     if (result.recording) {
       core.info(
         `Recording created: ${result.recording.path} (${result.recording.sizeMB.toFixed(1)} MB)`
       );
-      const upload = await uploadToGitHubAssets(token, owner, repoName, result.recording.path);
+      const upload = await uploadToGitHubAssets(token, owner2, repoName, result.recording.path);
       recordingUrl = upload.url;
       core.setOutput("recording-url", recordingUrl);
     }
@@ -46506,13 +46767,13 @@ ${result.errors.join("\n")}`);
     if (result.screenshots && result.screenshots.length > 0) {
       core.info(`Uploading ${result.screenshots.length} screenshot(s)...`);
       const uploadPromises = result.screenshots.map(
-        (screenshotPath) => uploadToGitHubAssets(token, owner, repoName, screenshotPath)
+        (screenshotPath) => uploadToGitHubAssets(token, owner2, repo, screenshotPath)
       );
       const uploads = await Promise.all(uploadPromises);
       screenshotUrls = uploads.map((u2) => u2.url);
     }
     const comment = await postPRComment(token, {
-      owner,
+      owner: owner2,
       repo: repoName,
       pullNumber,
       analysis: result.analysis,

@@ -9,6 +9,9 @@ const config: GitGlimpseConfig = {
     maxDuration: 20,
     viewport: { width: 960, height: 600 },
   },
+  trigger: {
+    mode: 'on-demand',
+  },
 };
 
 export default config;

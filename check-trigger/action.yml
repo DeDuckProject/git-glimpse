@@ -1,0 +1,27 @@
+name: 'GitGlimpse - Check Trigger'
+description: >
+  Lightweight pre-check that evaluates whether the git-glimpse pipeline should
+  run for the current PR event, based on the trigger configuration in
+  git-glimpse.config.ts. Use this before installing heavy dependencies (ffmpeg,
+  Playwright) to skip them entirely on runs that would be a no-op.
+author: 'git-glimpse'
+branding:
+  icon: 'check-circle'
+  color: 'purple'
+
+inputs:
+  trigger-mode:
+    description: 'Trigger mode: auto, on-demand, or smart (overrides config file)'
+    required: false
+  config-path:
+    description: 'Path to git-glimpse.config.ts'
+    default: 'git-glimpse.config.ts'
+    required: false
+
+outputs:
+  should-run:
+    description: 'Whether the git-glimpse pipeline should run (true/false)'
+
+runs:
+  using: 'node20'
+  main: '../packages/action/dist/check.js'

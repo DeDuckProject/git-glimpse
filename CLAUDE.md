@@ -8,12 +8,12 @@ git-glimpse is a GitHub Action + CLI that automatically generates visual demo cl
 
 ```
 packages/
-  core/      — Core library: diff analysis, script generation, recording, publishing
-  action/    — GitHub Action wrapper
-  cli/       — CLI for local use (`npx git-glimpse`)
-frameworks/  — Framework-specific route detectors (Remix, Next.js, SvelteKit)
-examples/    — Example project configurations
-tests/       — Integration tests
+  core/         — Core library: diff analysis, trigger logic, script generation, recording, publishing
+  action/       — GitHub Action wrapper (main action + check-trigger companion)
+  cli/          — CLI for local use (`npx git-glimpse`)
+check-trigger/  — Lightweight companion action for early trigger evaluation
+examples/       — Example project configurations
+tests/          — Integration and unit tests
 ```
 
 ## Development Setup

@@ -26,8 +26,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # On issue_comment, check out the PR head ref (default branch otherwise has no trigger code)
-          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
 
       - uses: actions/setup-node@v4
         with:

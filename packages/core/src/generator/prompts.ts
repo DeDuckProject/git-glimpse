@@ -29,6 +29,8 @@ export function buildScriptGenerationPrompt(options: ScriptPromptOptions): strin
 - The script must be self-contained and immediately runnable
 - Total demo should be under ${options.maxDuration} seconds
 - Do NOT test correctness — demonstrate the feature. Show it working, not edge cases.
+- Act as a real user: only interact through the UI using standard Playwright actions (navigate, click, type, hover). Never re-implement or simulate application features in the script.
+- Do NOT inject code into the page via \`page.evaluate\`, \`page.addInitScript\`, or inline \`<script>\` / \`<style>\` tags. The recording infrastructure handles visual overlays — the script should not.
 - Always call \`await page.waitForLoadState('networkidle')\` after navigation
 
 ## Context

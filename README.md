@@ -4,7 +4,7 @@ Automatically generate visual demo clips of UI changes in pull requests.
 
 When a PR is opened, GitGlimpse reads the diff, uses an LLM to understand what changed, generates a Playwright interaction script, records a demo, and posts it as a PR comment — all without leaving CI.
 
-![Example PR comment](assets/comment_example.gif)
+![Example PR comment](docs/comment-example.gif)
 
 ## How it works
 

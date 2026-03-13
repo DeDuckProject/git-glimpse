@@ -89,6 +89,18 @@ async function check(): Promise<void> {
       return;
     }
 
+    // Acknowledge immediately — this is the earliest action code runs for external users
+    try {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: context.payload.comment!.id,
+        content: 'eyes',
+      });
+    } catch {
+      // Non-fatal
+    }
+
     pullNumber = context.payload.issue!.number;
     eventType = 'comment';
 

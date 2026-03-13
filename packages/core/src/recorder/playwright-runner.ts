@@ -29,6 +29,14 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
     const context = await createContext(browser, recording, outputDir);
     const page = await context.newPage();
 
+    // Inject the cursor overlay after every page load (fires after app JS/hydration
+    // has run, so the cursor won't be removed by framework re-renders).
+    if (recording.showMouseClicks !== false) {
+      page.on('load', () => {
+        page.evaluate(buildMouseClickOverlayEvalScript()).catch(() => {});
+      });
+    }
+
     // Set a base URL for relative navigation
     await page.goto(baseUrl);
 
@@ -65,15 +73,13 @@ async function createContext(
     deviceScaleFactor: recording.deviceScaleFactor,
   });
 
-  if (recording.showMouseClicks !== false) {
-    await context.addInitScript(buildMouseClickOverlayScript());
-  }
-
   return context;
 }
 
-function buildMouseClickOverlayScript(): string {
+function buildMouseClickOverlayEvalScript(): string {
   return `(() => {
+  if (document.querySelector('.gg-cursor')) return;
+
   const style = document.createElement('style');
   style.textContent = \`
     .gg-cursor {
@@ -101,6 +107,13 @@ function buildMouseClickOverlayScript(): string {
   const cursor = document.createElement('div');
   cursor.className = 'gg-cursor';
   document.body.appendChild(cursor);
+
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(cursor)) {
+      document.body.appendChild(cursor);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: false });
 
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';

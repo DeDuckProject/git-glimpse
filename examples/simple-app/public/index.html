@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurel — Calibre IX Tourbillon</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-brand">Aurel</a>
+  <ul class="nav-links">
+    <li><a href="#">Collections</a></li>
+    <li><a href="#">Atelier</a></li>
+    <li><a href="#">Heritage</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <!-- Search icon -->
+    <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    <!-- Cart icon -->
+    <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="1.75"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── Left: Gallery ── -->
+  <div class="product-gallery">
+    <div class="image-stage">
+      <!-- SVG Watch Illustration -->
+      <svg class="watch-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="dialGrad" cx="42%" cy="35%">
+            <stop offset="0%" stop-color="#2A2520"/>
+            <stop offset="60%" stop-color="#1A1510"/>
+            <stop offset="100%" stop-color="#0E0C09"/>
+          </radialGradient>
+          <radialGradient id="caseGrad" cx="35%" cy="30%">
+            <stop offset="0%" stop-color="#E8DCC8"/>
+            <stop offset="40%" stop-color="#C9AD7A"/>
+            <stop offset="75%" stop-color="#A88A50"/>
+            <stop offset="100%" stop-color="#8A6E30"/>
+          </radialGradient>
+          <radialGradient id="innerRingGrad" cx="38%" cy="32%">
+            <stop offset="0%" stop-color="#B89A5C"/>
+            <stop offset="100%" stop-color="#7A5E2A"/>
+          </radialGradient>
+          <filter id="caseShadow">
+            <feDropShadow dx="3" dy="6" stdDeviation="8" flood-opacity="0.4"/>
+          </filter>
+          <filter id="dialInset">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.6" flood-color="#000"/>
+          </filter>
+          <linearGradient id="strapTop" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#150E08"/>
+            <stop offset="35%" stop-color="#2A1D12"/>
+            <stop offset="65%" stop-color="#2A1D12"/>
+            <stop offset="100%" stop-color="#150E08"/>
+          </linearGradient>
+          <linearGradient id="strapBot" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#150E08"/>
+            <stop offset="35%" stop-color="#2A1D12"/>
+            <stop offset="65%" stop-color="#2A1D12"/>
+            <stop offset="100%" stop-color="#150E08"/>
+          </linearGradient>
+          <linearGradient id="strapShineTop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.12)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+          </linearGradient>
+          <linearGradient id="strapShineBot" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.06)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+          </linearGradient>
+          <clipPath id="dialClip">
+            <circle cx="150" cy="170" r="95"/>
+          </clipPath>
+        </defs>
+
+        <!-- Top strap -->
+        <rect x="115" y="0" width="70" height="82" rx="12" fill="url(#strapTop)"/>
+        <rect x="115" y="0" width="70" height="82" rx="12" fill="url(#strapShineTop)" opacity="0.7"/>
+        <!-- Strap buckle holes -->
+        <rect x="128" y="16" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+        <rect x="128" y="26" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+        <rect x="128" y="36" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+        <rect x="128" y="46" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+        <rect x="128" y="56" width="44" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+
+        <!-- Bottom strap -->
+        <rect x="115" y="258" width="70" height="82" rx="12" fill="url(#strapBot)"/>
+        <rect x="115" y="258" width="70" height="82" rx="12" fill="url(#strapShineBot)" opacity="0.5"/>
+        <!-- Strap holes -->
+        <circle cx="150" cy="280" r="3.5" fill="#0A0806"/>
+        <circle cx="150" cy="296" r="3.5" fill="#0A0806"/>
+        <circle cx="150" cy="312" r="3.5" fill="#0A0806"/>
+
+        <!-- Case shadow -->
+        <circle cx="153" cy="176" r="104" fill="rgba(0,0,0,0.25)" filter="url(#caseShadow)"/>
+
+        <!-- Outer case -->
+        <circle cx="150" cy="170" r="102" fill="url(#caseGrad)"/>
+        <!-- Case bezel detail -->
+        <circle cx="150" cy="170" r="102" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+        <circle cx="150" cy="170" r="97" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>
+
+        <!-- Inner ring -->
+        <circle cx="150" cy="170" r="96" fill="url(#innerRingGrad)"/>
+        <circle cx="150" cy="170" r="94" fill="url(#dialGrad)"/>
+
+        <!-- Minute markers (60 ticks) -->
+        <g fill="rgba(255,255,255,0.22)">
+          <script type="text/ignore">/* ticks rendered below */</script>
+        </g>
+
+        <!-- Hour indices (12 roman/stick) -->
+        <g fill="#C9AD7A" font-family="'Playfair Display', serif" font-size="9" text-anchor="middle">
+          <!-- 12 o'clock -->
+          <rect x="147.5" y="84" width="5" height="14" rx="2" fill="#D4B97A"/>
+          <!-- 3 -->
+          <rect x="212" y="167.5" width="14" height="5" rx="2" fill="#D4B97A"/>
+          <!-- 6 -->
+          <rect x="147.5" y="242" width="5" height="14" rx="2" fill="#D4B97A"/>
+          <!-- 9 -->
+          <rect x="74" y="167.5" width="14" height="5" rx="2" fill="#D4B97A"/>
+          <!-- Minute ticks -->
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(30,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(60,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(120,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(150,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(210,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(240,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(300,150,170)"/>
+          <rect x="148.5" y="87" width="3" height="8" rx="1" fill="rgba(180,150,90,0.5)" transform="rotate(330,150,170)"/>
+        </g>
+
+        <!-- Tourbillon cage (at 6 o'clock sub-dial) -->
+        <circle cx="150" cy="215" r="18" fill="none" stroke="rgba(180,150,80,0.3)" stroke-width="1.5"/>
+        <circle cx="150" cy="215" r="14" fill="none" stroke="rgba(180,150,80,0.2)" stroke-width="1"/>
+        <circle cx="150" cy="215" r="5" fill="rgba(180,150,80,0.15)" stroke="rgba(180,150,80,0.4)" stroke-width="1"/>
+        <line x1="136" y1="215" x2="164" y2="215" stroke="rgba(180,150,80,0.25)" stroke-width="0.8"/>
+        <line x1="150" y1="201" x2="150" y2="229" stroke="rgba(180,150,80,0.25)" stroke-width="0.8"/>
+
+        <!-- Brand name on dial -->
+        <text x="150" y="145" font-family="'Playfair Display', serif" font-size="11" fill="#C9AD7A" text-anchor="middle" letter-spacing="4">AUREL</text>
+        <text x="150" y="158" font-family="'Inter', sans-serif" font-size="6.5" fill="rgba(180,150,80,0.7)" text-anchor="middle" letter-spacing="2">GENÈVE</text>
+
+        <!-- Hour hand -->
+        <g transform="rotate(330,150,170)">
+          <rect x="148" y="115" width="4" height="58" rx="2" fill="#E8DCC8"/>
+          <rect x="148.8" y="116" width="2.4" height="56" rx="1" fill="rgba(255,255,255,0.4)"/>
+        </g>
+
+        <!-- Minute hand -->
+        <g transform="rotate(100,150,170)">
+          <rect x="148.8" y="94" width="2.4" height="78" rx="1.2" fill="#E8DCC8"/>
+          <rect x="149.2" y="95" width="1.6" height="76" rx="0.8" fill="rgba(255,255,255,0.35)"/>
+        </g>
+
+        <!-- Seconds hand -->
+        <g transform="rotate(220,150,170)">
+          <rect x="149.5" y="92" width="1" height="60" rx="0.5" fill="#C0392B"/>
+          <rect x="149.2" y="155" width="1.6" height="18" rx="0.8" fill="#C0392B"/>
+        </g>
+
+        <!-- Center cap -->
+        <circle cx="150" cy="170" r="5" fill="#C9AD7A"/>
+        <circle cx="150" cy="170" r="3" fill="#E8DCC8"/>
+        <circle cx="150" cy="170" r="1.5" fill="#A88A50"/>
+
+        <!-- Crown -->
+        <rect x="249" y="162" width="14" height="16" rx="4" fill="url(#caseGrad)"/>
+        <rect x="250" y="164" width="12" height="12" rx="3" fill="rgba(255,255,255,0.12)"/>
+      </svg>
+    </div>
+
+    <!-- Thumbnails -->
+    <div class="thumb-row">
+      <div class="thumb active" data-view="front" title="Front">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="16" fill="#1A1510"/>
+          <circle cx="24" cy="24" r="16" fill="none" stroke="#C9AD7A" stroke-width="2"/>
+          <line x1="24" y1="16" x2="24" y2="24" stroke="#E8DCC8" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="24" y1="24" x2="30" y2="24" stroke="#E8DCC8" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="thumb" data-view="side" title="Side">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect x="16" y="12" width="16" height="24" rx="6" fill="#C9AD7A"/>
+          <rect x="19" y="12" width="10" height="24" fill="#1A1510" opacity="0.4"/>
+          <rect x="30" y="20" width="4" height="8" rx="2" fill="#B8933F"/>
+        </svg>
+      </div>
+      <div class="thumb" data-view="clasp" title="Clasp">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect x="14" y="18" width="20" height="12" rx="4" fill="#C9AD7A"/>
+          <rect x="17" y="21" width="14" height="6" rx="2" fill="#1A1510" opacity="0.5"/>
+          <rect x="22" y="23" width="4" height="2" rx="1" fill="#C9AD7A"/>
+        </svg>
+      </div>
+      <div class="thumb" data-view="back" title="Case back">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="16" fill="#C9AD7A"/>
+          <circle cx="24" cy="24" r="11" fill="none" stroke="#1A1510" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <text x="24" y="27" font-size="6" text-anchor="middle" fill="#1A1510" font-family="serif">IX</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Product info ── -->
+  <div class="product-info">
+    <p class="product-label">Limited Edition · No. 47 of 150</p>
+    <h1 class="product-title">Calibre IX<br>Tourbillon</h1>
+    <p class="product-subtitle">18k Rose Gold · Flying Tourbillon · 72h Power Reserve</p>
+
+    <!-- Rating -->
+    <div class="rating-row">
+      <svg style="display:none"><defs>
+        <linearGradient id="halfGold" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="50%" stop-color="#B8933F"/>
+          <stop offset="50%" stop-color="#DDD8CE"/>
+        </linearGradient>
+      </defs></svg>
+      <div class="stars">
+        <svg class="star" viewBox="0 0 20 20"><polygon points="10,2 12.4,7.8 18.5,8.2 14,12.2 15.6,18.1 10,14.8 4.4,18.1 6,12.2 1.5,8.2 7.6,7.8"/></svg>
+        <svg class="star" viewBox="0 0 20 20"><polygon points="10,2 12.4,7.8 18.5,8.2 14,12.2 15.6,18.1 10,14.8 4.4,18.1 6,12.2 1.5,8.2 7.6,7.8"/></svg>
+        <svg class="star" viewBox="0 0 20 20"><polygon points="10,2 12.4,7.8 18.5,8.2 14,12.2 15.6,18.1 10,14.8 4.4,18.1 6,12.2 1.5,8.2 7.6,7.8"/></svg>
+        <svg class="star" viewBox="0 0 20 20"><polygon points="10,2 12.4,7.8 18.5,8.2 14,12.2 15.6,18.1 10,14.8 4.4,18.1 6,12.2 1.5,8.2 7.6,7.8"/></svg>
+        <svg class="star half" viewBox="0 0 20 20"><polygon points="10,2 12.4,7.8 18.5,8.2 14,12.2 15.6,18.1 10,14.8 4.4,18.1 6,12.2 1.5,8.2 7.6,7.8"/></svg>
+      </div>
+      <span class="rating-count">4.8 (29 reviews)</span>
+      <div class="rating-divider"></div>
+      <span class="in-stock"><span class="stock-dot"></span>Only 3 left in stock</span>
+    </div>
+
+    <!-- Price -->
+    <div class="price-block">
+      <span class="price-current">$24,800</span>
+      <span class="price-original">$28,500</span>
+      <span class="price-badge">Save 13%</span>
+    </div>
+
+    <!-- Strap color -->
+    <div class="option-section">
+      <p class="option-label">Strap Color <span id="swatch-label">— Midnight Black</span></p>
+      <div class="swatch-row">
+        <div class="swatch active" data-color="midnight" title="Midnight Black" tabindex="0"></div>
+        <div class="swatch" data-color="cognac" title="Cognac" tabindex="0"></div>
+        <div class="swatch" data-color="slate" title="Slate Blue" tabindex="0"></div>
+        <div class="swatch" data-color="silver" title="Silver Mesh" tabindex="0"></div>
+      </div>
+    </div>
+
+    <!-- Case size -->
+    <div class="option-section">
+      <p class="option-label">Case Size</p>
+      <div class="size-row">
+        <div class="size-pill" tabindex="0">38mm</div>
+        <div class="size-pill active" tabindex="0">40mm</div>
+        <div class="size-pill" tabindex="0">42mm</div>
+      </div>
+    </div>
+
+    <!-- Quantity + CTA -->
+    <div class="cta-row">
+      <div class="qty-control">
+        <button class="qty-btn" id="qty-dec" aria-label="Decrease quantity">−</button>
+        <div class="qty-val" id="qty-val">1</div>
+        <button class="qty-btn" id="qty-inc" aria-label="Increase quantity">+</button>
+      </div>
+      <button class="btn-cart" id="btn-cart">
+        <svg viewBox="0 0 24 24" stroke-width="2">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.99-1.61L23 6H6"/>
+        </svg>
+        <span id="cart-label">Add to Cart</span>
+      </button>
+      <button class="btn-wishlist" id="btn-wishlist" aria-label="Add to wishlist">
+        <svg viewBox="0 0 24 24" stroke-width="1.75">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+        </svg>
+      </button>
+    </div>
+    <p class="cart-feedback" id="cart-feedback">Added to cart — free delivery included</p>
+
+    <!-- Feature pills -->
+    <div class="feature-row">
+      <span class="feature-pill">
+        <svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        5-Year Warranty
+      </span>
+      <span class="feature-pill">
+        <svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        Free Luxury Box
+      </span>
+      <span class="feature-pill">
+        <svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Free Returns · 30 Days
+      </span>
+      <span class="feature-pill">
+        <svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Ships in 2–3 Days
+      </span>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ── Quantity counter ──
+  let qty = 1;
+  const qtyVal = document.getElementById('qty-val');
+
+  function bumpQty() {
+    qtyVal.classList.remove('bump');
+    void qtyVal.offsetWidth; // reflow
+    qtyVal.classList.add('bump');
+    setTimeout(() => qtyVal.classList.remove('bump'), 200);
+  }
+
+  document.getElementById('qty-dec').addEventListener('click', () => {
+    if (qty > 1) { qty--; qtyVal.textContent = qty; bumpQty(); }
+  });
+  document.getElementById('qty-inc').addEventListener('click', () => {
+    qty++; qtyVal.textContent = qty; bumpQty();
+  });
+
+  // ── Add to cart ──
+  const btnCart = document.getElementById('btn-cart');
+  const cartLabel = document.getElementById('cart-label');
+  const cartFeedback = document.getElementById('cart-feedback');
+  let cartCount = 0;
+
+  btnCart.addEventListener('click', () => {
+    cartCount += qty;
+    cartLabel.textContent = `${cartCount} in Cart`;
+    btnCart.classList.add('added');
+    cartFeedback.classList.add('visible');
+    setTimeout(() => {
+      btnCart.classList.remove('added');
+      cartFeedback.classList.remove('visible');
+    }, 2200);
+  });
+
+  // ── Wishlist toggle ──
+  const btnWish = document.getElementById('btn-wishlist');
+  btnWish.addEventListener('click', () => {
+    btnWish.classList.toggle('wished');
+  });
+
+  // ── Color swatches ──
+  const swatchNames = {
+    midnight: 'Midnight Black',
+    cognac: 'Cognac',
+    slate: 'Slate Blue',
+    silver: 'Silver Mesh'
+  };
+  const swatchLabel = document.getElementById('swatch-label');
+
+  document.querySelectorAll('.swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      swatchLabel.textContent = '— ' + swatchNames[sw.dataset.color];
+    });
+    sw.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sw.click(); }
+    });
+  });
+
+  // ── Size pills ──
+  document.querySelectorAll('.size-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.size-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+
+  // ── Thumbnails ──
+  document.querySelectorAll('.thumb').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.thumb').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

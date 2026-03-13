@@ -76,6 +76,21 @@ async function run(): Promise<void> {
   let headSha: string;
   let eventType: 'push' | 'comment';
   let command = null;
+  let commentId: number | null = null;
+
+  const addCommentReaction = async (content: 'eyes' | 'hooray' | 'confused') => {
+    if (commentId === null) return;
+    try {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: commentId,
+        content,
+      });
+    } catch {
+      // Non-fatal
+    }
+  };
 
   if (eventName === 'issue_comment') {
     // Only handle comments on PRs, not plain issues
@@ -92,19 +107,8 @@ async function run(): Promise<void> {
     }
 
     pullNumber = context.payload.issue!.number;
+    commentId = context.payload.comment!.id;
     eventType = 'comment';
-
-    // Acknowledge the command with a reaction
-    try {
-      await octokit.rest.reactions.createForIssueComment({
-        owner,
-        repo,
-        comment_id: context.payload.comment!.id,
-        content: 'eyes',
-      });
-    } catch {
-      // Non-fatal: reaction is best-effort
-    }
 
     // Fetch PR details to get base/head SHAs
     const pr = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
@@ -212,6 +216,10 @@ async function run(): Promise<void> {
     core.info(`Demo comment posted: ${comment.url}`);
     core.setOutput('comment-url', comment.url);
     core.setOutput('success', String(result.success));
+    await addCommentReaction('hooray');
+  } catch (err) {
+    await addCommentReaction('confused');
+    throw err;
   } finally {
     appProcess?.kill();
   }

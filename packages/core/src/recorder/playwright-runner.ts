@@ -6,6 +6,7 @@ import type { RecordingConfig } from '../config/schema.js';
 export interface RecordingResult {
   videoPath: string;
   duration: number;
+  tracePath?: string;
 }
 
 export interface RunScriptOptions {
@@ -27,7 +28,19 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
 
   try {
     const context = await createContext(browser, recording, outputDir);
+    const enableTrace = process.env['GG_DEBUG_TRACE'] === '1';
+    if (enableTrace) {
+      await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
+    }
     const page = await context.newPage();
+
+    // Inject the cursor overlay after every page load (fires after app JS/hydration
+    // has run, so the cursor won't be removed by framework re-renders).
+    if (recording.showMouseClicks !== false) {
+      page.on('load', () => {
+        page.evaluate(buildMouseClickOverlayEvalScript()).catch(() => {});
+      });
+    }
 
     // Set a base URL for relative navigation
     await page.goto(baseUrl);
@@ -40,12 +53,18 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
       console.warn(`Demo exceeded max duration (${elapsed.toFixed(1)}s > ${recording.maxDuration}s)`);
     }
 
+    let tracePath: string | undefined;
+    if (enableTrace) {
+      tracePath = join(outputDir, 'trace.zip');
+      await context.tracing.stop({ path: tracePath });
+    }
+
     await context.close();
 
     const videoPath = await resolveVideoPath(outputDir);
     const duration = (Date.now() - startTime) / 1000;
 
-    return { videoPath, duration };
+    return { videoPath, duration, tracePath };
   } finally {
     await browser.close();
   }
@@ -65,15 +84,13 @@ async function createContext(
     deviceScaleFactor: recording.deviceScaleFactor,
   });
 
-  if (recording.showMouseClicks !== false) {
-    await context.addInitScript(buildMouseClickOverlayScript());
-  }
-
   return context;
 }
 
-function buildMouseClickOverlayScript(): string {
+function buildMouseClickOverlayEvalScript(): string {
   return `(() => {
+  if (document.querySelector('.gg-cursor')) return;
+
   const style = document.createElement('style');
   style.textContent = \`
     .gg-cursor {
@@ -101,6 +118,13 @@ function buildMouseClickOverlayScript(): string {
   const cursor = document.createElement('div');
   cursor.className = 'gg-cursor';
   document.body.appendChild(cursor);
+
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(cursor)) {
+      document.body.appendChild(cursor);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: false });
 
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';

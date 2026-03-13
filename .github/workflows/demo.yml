@@ -93,3 +93,12 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GG_DEBUG_TRACE: '1'
+
+      - name: Upload Playwright trace
+        if: always() && steps.check.outputs.should-run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: ./recordings/trace.zip
+          if-no-files-found: ignore

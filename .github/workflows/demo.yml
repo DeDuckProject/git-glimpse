@@ -1,6 +1,13 @@
 # GitGlimpse E2E Demo Workflow
 # Runs the action against a local example app on every PR.
 # Safe: no untrusted user input (PR titles/bodies) is used in run: commands.
+#
+# ⚠️  IMPORTANT — changes to this file only take effect after merging to main.
+#
+# GitHub always reads issue_comment workflows from the default branch (main),
+# so edits to this file on a feature branch are silently ignored when /glimpse
+# is triggered. To test a workflow change: merge to main first, then re-run.
+# (Action/core code changes are fine on branches — they are rebuilt from source.)
 name: GitGlimpse Demo
 
 on:
@@ -28,13 +35,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
 
-      # On issue_comment we check out the PR head (for app code), but need
-      # the action from main (which has trigger support). The bundled dist
-      # includes all core logic, so restoring just packages/action/ suffices.
-      - name: Use latest action code from main
-        if: github.event_name == 'issue_comment'
-        run: git checkout origin/main -- packages/action/
-
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -44,6 +44,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      # Always build from source so the action dist matches the checked-out code.
+      # This ensures /glimpse on a PR branch uses that branch's action/core code,
+      # not whatever was last committed to dist or published to main.
+      - name: Build action from source
+        run: pnpm build
 
       # Check whether the pipeline should run before installing heavy dependencies.
       # Subsequent steps are gated on this output to skip ffmpeg/Playwright when
@@ -93,12 +99,3 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GG_DEBUG_TRACE: '1'
-
-      - name: Upload Playwright trace
-        if: always() && steps.check.outputs.should-run == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-trace
-          path: ./recordings/trace.zip
-          if-no-files-found: ignore

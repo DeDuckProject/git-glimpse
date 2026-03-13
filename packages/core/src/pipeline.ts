@@ -24,7 +24,6 @@ export interface DemoResult {
     format: string;
     duration: number;
     sizeMB: number;
-    tracePath?: string;
   };
   screenshots?: string[];
   script: string;
@@ -112,7 +111,6 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
         format: processed.format,
         duration: recordingResult.duration,
         sizeMB: processed.sizeMB,
-        tracePath: recordingResult.tracePath,
       },
       script,
       analysis,

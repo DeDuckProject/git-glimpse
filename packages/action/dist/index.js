@@ -41907,10 +41907,6 @@ async function runScriptAndRecord(options) {
   const startTime = Date.now();
   try {
     const context2 = await createContext(browser, recording, outputDir);
-    const enableTrace = process.env["GG_DEBUG_TRACE"] === "1";
-    if (enableTrace) {
-      await context2.tracing.start({ screenshots: true, snapshots: true, sources: false });
-    }
     const page = await context2.newPage();
     if (recording.showMouseClicks !== false) {
       page.on("load", () => {
@@ -41924,15 +41920,10 @@ async function runScriptAndRecord(options) {
     if (elapsed > recording.maxDuration) {
       console.warn(`Demo exceeded max duration (${elapsed.toFixed(1)}s > ${recording.maxDuration}s)`);
     }
-    let tracePath;
-    if (enableTrace) {
-      tracePath = (0, import_node_path.join)(outputDir, "trace.zip");
-      await context2.tracing.stop({ path: tracePath });
-    }
     await context2.close();
     const videoPath = await resolveVideoPath(outputDir);
     const duration = (Date.now() - startTime) / 1e3;
-    return { videoPath, duration, tracePath };
+    return { videoPath, duration };
   } finally {
     await browser.close();
   }
@@ -42258,8 +42249,7 @@ async function runPipeline(options) {
         path: processed.outputPath,
         format: processed.format,
         duration: recordingResult.duration,
-        sizeMB: processed.sizeMB,
-        tracePath: recordingResult.tracePath
+        sizeMB: processed.sizeMB
       },
       script,
       analysis,

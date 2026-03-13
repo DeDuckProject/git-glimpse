@@ -8,12 +8,12 @@ git-glimpse is a GitHub Action + CLI that automatically generates visual demo cl
 
 ```
 packages/
-  core/      — Core library: diff analysis, script generation, recording, publishing
-  action/    — GitHub Action wrapper
-  cli/       — CLI for local use (`npx git-glimpse`)
-frameworks/  — Framework-specific route detectors (Remix, Next.js, SvelteKit)
-examples/    — Example project configurations
-tests/       — Integration tests
+  core/         — Core library: diff analysis, trigger logic, script generation, recording, publishing
+  action/       — GitHub Action wrapper (main action + check-trigger companion)
+  cli/          — CLI for local use (`npx git-glimpse`)
+check-trigger/  — Lightweight companion action for early trigger evaluation
+examples/       — Example project configurations
+tests/          — Integration and unit tests
 ```
 
 ## Development Setup
@@ -48,6 +48,22 @@ pnpm test --watch   # watch mode
 ```
 
 Integration tests require a running app. See `tests/integration/`.
+
+## External-First Design Principle
+
+git-glimpse is used as a GitHub Action (and in future possibly a GitHub App) by *other* repos —
+not just this one. Every change we make must account for the experience of those consumers.
+
+**Rules of thumb:**
+- **Seamless by default**: aim for zero-config or minimal-config integration that just works.
+- **Control when needed**: if seamless isn't achievable (e.g. workflow-level changes), provide
+  clear documentation, sample workflow snippets, and ideally a wrapper action.
+- **No silent breakage**: changes to action inputs/outputs, config schema, or workflow events must
+  be backwards-compatible or clearly versioned.
+- **Test from the outside**: validate features as if you were a consumer repo, not just via this
+  repo's internal `demo.yml`.
+- **Discuss trade-offs**: if a feature requires consumers to make non-trivial changes (new secrets,
+  new workflow jobs, new permissions), flag it in the PR for a deliberate decision.
 
 ## Branching Convention
 

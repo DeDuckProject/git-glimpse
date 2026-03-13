@@ -41908,6 +41908,12 @@ async function runScriptAndRecord(options) {
   try {
     const context2 = await createContext(browser, recording, outputDir);
     const page = await context2.newPage();
+    if (recording.showMouseClicks !== false) {
+      page.on("load", () => {
+        page.evaluate(buildMouseClickOverlayEvalScript()).catch(() => {
+        });
+      });
+    }
     await page.goto(baseUrl);
     await executeScript(script, page, baseUrl);
     const elapsed = (Date.now() - startTime) / 1e3;
@@ -41931,13 +41937,12 @@ async function createContext(browser, recording, outputDir) {
     viewport: recording.viewport,
     deviceScaleFactor: recording.deviceScaleFactor
   });
-  if (recording.showMouseClicks !== false) {
-    await context2.addInitScript(buildMouseClickOverlayScript());
-  }
   return context2;
 }
-function buildMouseClickOverlayScript() {
+function buildMouseClickOverlayEvalScript() {
   return `(() => {
+  if (document.querySelector('.gg-cursor')) return;
+
   const style = document.createElement('style');
   style.textContent = \`
     .gg-cursor {
@@ -41965,6 +41970,13 @@ function buildMouseClickOverlayScript() {
   const cursor = document.createElement('div');
   cursor.className = 'gg-cursor';
   document.body.appendChild(cursor);
+
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(cursor)) {
+      document.body.appendChild(cursor);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: false });
 
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';

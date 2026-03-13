@@ -1,6 +1,13 @@
 # GitGlimpse E2E Demo Workflow
 # Runs the action against a local example app on every PR.
 # Safe: no untrusted user input (PR titles/bodies) is used in run: commands.
+#
+# ⚠️  IMPORTANT — changes to this file only take effect after merging to main.
+#
+# GitHub always reads issue_comment workflows from the default branch (main),
+# so edits to this file on a feature branch are silently ignored when /glimpse
+# is triggered. To test a workflow change: merge to main first, then re-run.
+# (Action/core code changes are fine on branches — they are rebuilt from source.)
 name: GitGlimpse Demo
 
 on:
@@ -21,19 +28,13 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
-
-      # On issue_comment we check out the PR head (for app code), but need
-      # the action from main (which has trigger support). The bundled dist
-      # includes all core logic, so restoring just packages/action/ suffices.
-      - name: Use latest action code from main
-        if: github.event_name == 'issue_comment'
-        run: git checkout origin/main -- packages/action/
 
       - uses: pnpm/action-setup@v4
 
@@ -44,6 +45,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      # Always build from source so the action dist matches the checked-out code.
+      # This ensures /glimpse on a PR branch uses that branch's action/core code,
+      # not whatever was last committed to dist or published to main.
+      - name: Build action from source
+        run: pnpm build
 
       # Check whether the pipeline should run before installing heavy dependencies.
       # Subsequent steps are gated on this output to skip ffmpeg/Playwright when
@@ -93,3 +100,24 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: React with hooray on success
+        if: >-
+          github.event_name == 'issue_comment' &&
+          steps.check.outputs.should-run == 'true' &&
+          success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=hooray || true
+
+      - name: React with confused on failure
+        if: >-
+          github.event_name == 'issue_comment' &&
+          failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=confused || true

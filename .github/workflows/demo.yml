@@ -1,6 +1,13 @@
 # GitGlimpse E2E Demo Workflow
 # Runs the action against a local example app on every PR.
 # Safe: no untrusted user input (PR titles/bodies) is used in run: commands.
+#
+# ⚠️  IMPORTANT — changes to this file only take effect after merging to main.
+#
+# GitHub always reads issue_comment workflows from the default branch (main),
+# so edits to this file on a feature branch are silently ignored when /glimpse
+# is triggered. To test a workflow change: merge to main first, then re-run.
+# (Action/core code changes are fine on branches — they are rebuilt from source.)
 name: GitGlimpse Demo
 
 on:

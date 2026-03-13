@@ -17,24 +17,6 @@ on:
     types: [created]
 
 jobs:
-  # Lightweight job: reacts with 👀 immediately — no checkout or install needed.
-  # Runs in parallel with the demo job so the acknowledgment appears as fast as possible.
-  ack:
-    if: >-
-      github.event_name == 'issue_comment' &&
-      github.event.issue.pull_request != null &&
-      contains(github.event.comment.body, '/glimpse')
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      - name: React with eyes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
-            --method POST --field content=eyes || true
-
   demo:
     runs-on: ubuntu-latest
     # Run on PR events, or on issue_comment only if it's a PR comment containing /glimpse
@@ -46,6 +28,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4

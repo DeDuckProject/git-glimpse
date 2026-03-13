@@ -28,22 +28,26 @@ PR opened/updated  (or /glimpse comment)
 
 ## Quick start
 
-### 1. Add a workflow file
+### 1. Add the workflow files
+
+Two files are recommended. The first is the main pipeline; the second gives instant 👀 feedback on `/glimpse` comments without adding noise to PR push checks.
+
+> **Note:** GitHub always reads `issue_comment` workflows from the **default branch** (main). Edits on feature branches are silently ignored for comment triggers — merge to main first for those changes to take effect. Action and core code changes are fine to test on branches.
+
+**`.github/workflows/git-glimpse.yml`** — the main pipeline:
 
 ```yaml
-# .github/workflows/git-glimpse.yml
 name: GitGlimpse
 
 on:
   pull_request:
     types: [opened, synchronize]
-  issue_comment:          # needed for on-demand /glimpse comments
+  issue_comment:
     types: [created]
 
 jobs:
   demo:
     runs-on: ubuntu-latest
-    # Skip issue_comment events that aren't /glimpse on a PR
     if: >-
       github.event_name == 'pull_request' ||
       (github.event_name == 'issue_comment' &&
@@ -52,6 +56,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: write       # required for uploading assets
+      issues: write         # required for comment reactions
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +80,51 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: React with hooray on success
+        if: github.event_name == 'issue_comment' && success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=hooray || true
+
+      - name: React with confused on failure
+        if: github.event_name == 'issue_comment' && failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=confused || true
 ```
+
+**`.github/workflows/git-glimpse-ack.yml`** — optional but recommended, reacts with 👀 within ~15–30s so the commenter knows their request was received before the heavy pipeline begins:
+
+```yaml
+name: GitGlimpse Acknowledge
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  ack:
+    if: >-
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/glimpse')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: React with eyes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=eyes || true
+```
+
+The ack workflow is kept separate so it never shows up as a "skipped" check on PR push events — which would add noise for non-developer reviewers.
 
 ### 2. Add a config file
 
@@ -164,9 +213,7 @@ All trigger modes support `/glimpse` PR comments:
 
 The command prefix is configurable via `trigger.commentCommand` (default: `/glimpse`).
 
-When a `/glimpse` comment is detected, the action acknowledges with a 👀 reaction immediately.
-
-> **Note:** The `issue_comment` event must be included in your workflow trigger (as shown in the quick start) for comment commands to work.
+> **Note:** The `issue_comment` event must be included in your workflow trigger (as shown in the quick start) for comment commands to work. Add the optional `git-glimpse-ack.yml` workflow to give commenters immediate 👀 feedback before the heavy pipeline starts.
 
 ---
 
@@ -175,41 +222,71 @@ When a `/glimpse` comment is detected, the action acknowledges with a 👀 react
 Installing FFmpeg and Playwright Chromium takes 2–4 minutes. When using `on-demand` or `smart` mode, many PR pushes would be skipped anyway. The `check-trigger` companion action evaluates the trigger decision first, for the cost of a few seconds, so you can gate the heavy installs on the result.
 
 ```yaml
-steps:
-  - uses: actions/checkout@v4
-    with:
-      fetch-depth: 0
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '/glimpse'))
+    permissions:
+      pull-requests: write
+      contents: write
+      issues: write
 
-  - run: npm ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
 
-  # Lightweight check — runs in seconds
-  - uses: DeDuckProject/git-glimpse/check-trigger@v1
-    id: check
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm ci
 
-  # Gate all heavy steps on the result
-  - name: Install FFmpeg
-    if: steps.check.outputs.should-run == 'true'
-    run: sudo apt-get install -y ffmpeg
+      # Lightweight check — runs in seconds
+      - uses: DeDuckProject/git-glimpse/check-trigger@v1
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  - name: Cache Playwright browsers
-    if: steps.check.outputs.should-run == 'true'
-    uses: actions/cache@v4
-    with:
-      path: ~/.cache/ms-playwright
-      key: playwright-chromium-${{ hashFiles('**/package-lock.json') }}
-      restore-keys: playwright-chromium-
+      # Gate all heavy steps on the result
+      - name: Install FFmpeg
+        if: steps.check.outputs.should-run == 'true'
+        run: sudo apt-get install -y ffmpeg
 
-  - name: Install Playwright Chromium
-    if: steps.check.outputs.should-run == 'true'
-    run: npx playwright install chromium --with-deps
+      - name: Cache Playwright browsers
+        if: steps.check.outputs.should-run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: playwright-chromium-
 
-  - uses: DeDuckProject/git-glimpse@v1
-    if: steps.check.outputs.should-run == 'true'
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Playwright Chromium
+        if: steps.check.outputs.should-run == 'true'
+        run: npx playwright install chromium --with-deps
+
+      - uses: DeDuckProject/git-glimpse@v1
+        if: steps.check.outputs.should-run == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: React with hooray on success
+        if: github.event_name == 'issue_comment' && steps.check.outputs.should-run == 'true' && success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=hooray || true
+
+      - name: React with confused on failure
+        if: github.event_name == 'issue_comment' && failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=confused || true
 ```
 
 `check-trigger` outputs:

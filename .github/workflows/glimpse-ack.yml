@@ -1,0 +1,40 @@
+# GitGlimpse Acknowledge Workflow
+#
+# OPTIONAL — this workflow is not required for git-glimpse to work.
+# The demo pipeline runs and posts its comment regardless of whether
+# this file exists.
+#
+# What it does: reacts with 👀 on the /glimpse comment as soon as a
+# runner is available (~15–30s), giving the commenter immediate visual
+# confirmation that their request was received — before the heavy
+# pipeline steps begin.
+#
+# Why it's a separate file: keeping it separate from the main workflow
+# means it never shows up as a "skipped" check on pull_request events.
+# If it were in the same file as the demo job, GitHub would show an
+# "ack (skipped)" entry in the PR checks on every push — noise for
+# non-developer reviewers.
+#
+# ⚠️  Changes only take effect after merging to main (GitHub reads
+#     issue_comment workflows from the default branch).
+name: GitGlimpse Acknowledge
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  ack:
+    if: >-
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/glimpse')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: React with eyes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=eyes || true

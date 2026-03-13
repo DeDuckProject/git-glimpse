@@ -28,6 +28,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -99,3 +100,24 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: React with hooray on success
+        if: >-
+          github.event_name == 'issue_comment' &&
+          steps.check.outputs.should-run == 'true' &&
+          success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=hooray || true
+
+      - name: React with confused on failure
+        if: >-
+          github.event_name == 'issue_comment' &&
+          failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions \
+            --method POST --field content=confused || true

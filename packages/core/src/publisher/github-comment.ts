@@ -115,9 +115,11 @@ function buildCommentBody(options: CommentOptions): string {
     : '';
 
   const mediaSection = recordingUrl
-    ? `![Demo](${recordingUrl})`
+    ? `![Demo](${recordingUrl})\n\n[📱 Can't see the preview? Open it directly](${recordingUrl})`
     : screenshots && screenshots.length > 0
-    ? screenshots.map((s, i) => `![Screenshot ${i + 1}](${s})`).join('\n')
+    ? screenshots
+        .map((s, i) => `![Screenshot ${i + 1}](${s})\n\n[📱 Can't see screenshot ${i + 1}? Open it directly](${s})`)
+        .join('\n\n')
     : '_No recording available._';
 
   const rerunSection = rerunUrl ? `\n\n[↺ Re-run demo](${rerunUrl})` : '';

@@ -24,7 +24,6 @@ export function buildScriptGenerationPrompt(options: ScriptPromptOptions): strin
 ## Rules
 - Navigate to the affected pages
 - Interact with new/changed UI elements (click buttons, fill forms, hover states)
-- Add \`await page.waitForTimeout(1500)\` pauses on key visual states so the recording captures them clearly
 - Use resilient selectors in priority order: text content > ARIA roles > test IDs > CSS classes
 - The script must be self-contained and immediately runnable
 - Total demo should be under ${options.maxDuration} seconds
@@ -32,6 +31,16 @@ export function buildScriptGenerationPrompt(options: ScriptPromptOptions): strin
 - Act as a real user: only interact through the UI using standard Playwright actions (navigate, click, type, hover). Never re-implement or simulate application features in the script.
 - Do NOT inject code into the page via \`page.evaluate\`, \`page.addInitScript\`, or inline \`<script>\` / \`<style>\` tags. The recording infrastructure handles visual overlays — the script should not.
 - Always call \`await page.waitForLoadState('networkidle')\` after navigation
+
+## Timing
+- Keep pauses short: use \`await page.waitForTimeout(300)\` between most actions
+- Only use a longer pause (\`await page.waitForTimeout(800)\`) directly after an interaction whose visual result (animation, state change, panel opening) is the point of the demo
+- Avoid stacking multiple pauses in a row — one pause per meaningful moment is enough
+
+## Mouse movement
+- Move the mouse naturally between interactions: before clicking or hovering a target, briefly move to a nearby point first so the cursor doesn't teleport
+- Use \`await page.mouse.move(x, y)\` for a single intermediate waypoint — keep it simple, one waypoint is enough
+- Coordinates should be plausible screen positions relative to the viewport (${options.viewport.width}x${options.viewport.height})
 
 ## Context
 - Base URL: ${options.baseUrl}

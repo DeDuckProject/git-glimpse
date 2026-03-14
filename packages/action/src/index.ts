@@ -154,13 +154,12 @@ async function run(): Promise<void> {
     return;
   }
 
-  const baseUrl = resolveBaseUrl(config, previewUrlInput);
-  if (!baseUrl) {
-    core.setFailed(
-      'No base URL available. Set app.previewUrl or app.startCommand + app.readyWhen in config.'
-    );
+  const baseUrlResult = resolveBaseUrl(config, previewUrlInput);
+  if (!baseUrlResult.url) {
+    core.setFailed(baseUrlResult.error!);
     return;
   }
+  const baseUrl = baseUrlResult.url;
 
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
@@ -225,17 +224,33 @@ async function run(): Promise<void> {
   }
 }
 
-function resolveBaseUrl(config: GitGlimpseConfig, previewUrlOverride?: string): string | null {
+export function resolveBaseUrl(
+  config: GitGlimpseConfig,
+  previewUrlOverride?: string
+): { url: string; error?: never } | { url?: never; error: string } {
   const previewUrl = previewUrlOverride ?? config.app.previewUrl;
   if (previewUrl) {
-    const resolved = process.env[previewUrl] ?? previewUrl;
-    return resolved.startsWith('http') ? resolved : null;
+    const resolved = process.env[previewUrl];
+    if (resolved === undefined) {
+      // previewUrl is a literal URL string, not an env var name
+      if (previewUrl.startsWith('http')) return { url: previewUrl };
+      return {
+        error: `app.previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. ` +
+          `Set it to a full URL (e.g. "https://my-preview.vercel.app") or an env var name that is available in this workflow job.`,
+      };
+    }
+    if (!resolved.startsWith('http')) {
+      return {
+        error: `Env var "${previewUrl}" was found but its value "${resolved}" is not a valid URL. Expected a value starting with "http".`,
+      };
+    }
+    return { url: resolved };
   }
   if (config.app.readyWhen?.url) {
     const u = new URL(config.app.readyWhen.url);
-    return u.origin;
+    return { url: u.origin };
   }
-  return 'http://localhost:3000';
+  return { url: 'http://localhost:3000' };
 }
 
 async function startApp(

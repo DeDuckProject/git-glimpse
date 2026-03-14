@@ -25800,12 +25800,6 @@ function computeChangeMagnitude(files) {
   return files.reduce((sum, f) => sum + f.additions + f.deletions, 0);
 }
 
-// ../core/dist/recorder/playwright-runner.js
-var import_test = require("@playwright/test");
-
-// ../core/dist/recorder/fallback.js
-var import_test2 = require("@playwright/test");
-
 // ../core/dist/config/loader.js
 var import_node_url = require("node:url");
 var import_node_fs = require("node:fs");
@@ -30107,6 +30101,15 @@ async function check() {
       core.info(`No ${triggerConfig.commentCommand} command found in comment. Skipping.`);
       core.setOutput("should-run", "false");
       return;
+    }
+    try {
+      await octokit.rest.reactions.createForIssueComment({
+        owner,
+        repo,
+        comment_id: context2.payload.comment.id,
+        content: "eyes"
+      });
+    } catch {
     }
     pullNumber = context2.payload.issue.number;
     eventType = "comment";

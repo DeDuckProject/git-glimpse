@@ -1,4 +1,3 @@
-import { chromium } from '@playwright/test';
 import { mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecordingConfig } from '../config/schema.js';
@@ -18,6 +17,7 @@ export async function takeScreenshots(
     mkdirSync(outputDir, { recursive: true });
   }
 
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch({ headless: true });
   const screenshots: string[] = [];
 

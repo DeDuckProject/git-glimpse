@@ -1,4 +1,4 @@
-import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecordingConfig } from '../config/schema.js';
@@ -22,6 +22,7 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
     mkdirSync(outputDir, { recursive: true });
   }
 
+  const { chromium } = await import('@playwright/test');
   const browser = await chromium.launch({ headless: true });
   const startTime = Date.now();
 

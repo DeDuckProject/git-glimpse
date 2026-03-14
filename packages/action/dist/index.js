@@ -70269,6 +70269,47 @@ function evaluateTrigger(opts) {
   };
 }
 
+// src/resolve-base-url.ts
+function resolveBaseUrl(config, previewUrlOverride) {
+  const previewUrl = previewUrlOverride ?? config.app.previewUrl;
+  if (previewUrl) {
+    const resolved = process.env[previewUrl];
+    if (resolved === void 0) {
+      if (previewUrl.startsWith("http")) return { url: previewUrl };
+      return {
+        error: `app.previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. Set it to a full URL (e.g. "https://my-preview.vercel.app") or an env var name that is available in this workflow job.`
+      };
+    }
+    if (!resolved.startsWith("http")) {
+      return {
+        error: `Env var "${previewUrl}" was found but its value "${resolved}" is not a valid URL. Expected a value starting with "http".`
+      };
+    }
+    return { url: resolved };
+  }
+  if (config.app.readyWhen?.url) {
+    const u2 = new URL(config.app.readyWhen.url);
+    return { url: u2.origin };
+  }
+  return { url: "http://localhost:3000" };
+}
+
+// src/api-key-check.ts
+var REMEDIATION = "Add it to your workflow: env: ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}";
+function checkApiKey(apiKey, shouldRun) {
+  if (apiKey) return { action: "ok" };
+  if (shouldRun) {
+    return {
+      action: "fail",
+      message: `ANTHROPIC_API_KEY is required but not set. ${REMEDIATION}`
+    };
+  }
+  return {
+    action: "warn",
+    message: `ANTHROPIC_API_KEY is not set. The pipeline will fail if it runs. ${REMEDIATION}`
+  };
+}
+
 // src/index.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -70288,6 +70329,11 @@ async function run() {
   const token = process.env["GITHUB_TOKEN"];
   if (!token) {
     core.setFailed("GITHUB_TOKEN is required");
+    return;
+  }
+  const apiKeyCheck = checkApiKey(process.env["ANTHROPIC_API_KEY"], true);
+  if (apiKeyCheck.action === "fail") {
+    core.setFailed(apiKeyCheck.message);
     return;
   }
   const eventName = context2.eventName;
@@ -70385,13 +70431,12 @@ async function run() {
     core.setOutput("success", "false");
     return;
   }
-  const baseUrl = resolveBaseUrl(config, previewUrlInput);
-  if (!baseUrl) {
-    core.setFailed(
-      "No base URL available. Set app.previewUrl or app.startCommand + app.readyWhen in config."
-    );
+  const baseUrlResult = resolveBaseUrl(config, previewUrlInput);
+  if (!baseUrlResult.url) {
+    core.setFailed(baseUrlResult.error);
     return;
   }
+  const baseUrl = baseUrlResult.url;
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
     const parts = config.setup.split(" ");
@@ -70446,18 +70491,6 @@ ${result.errors.join("\n")}`);
   } finally {
     appProcess?.kill();
   }
-}
-function resolveBaseUrl(config, previewUrlOverride) {
-  const previewUrl = previewUrlOverride ?? config.app.previewUrl;
-  if (previewUrl) {
-    const resolved = process.env[previewUrl] ?? previewUrl;
-    return resolved.startsWith("http") ? resolved : null;
-  }
-  if (config.app.readyWhen?.url) {
-    const u2 = new URL(config.app.readyWhen.url);
-    return u2.origin;
-  }
-  return "http://localhost:3000";
 }
 async function startApp(startCommand, readyUrl) {
   const parts = startCommand.split(" ");

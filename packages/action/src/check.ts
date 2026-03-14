@@ -17,6 +17,7 @@ import {
   parseGlimpseCommand,
   DEFAULT_TRIGGER,
 } from '@git-glimpse/core';
+import { checkApiKey } from './api-key-check.js';
 
 function streamCommand(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -138,6 +139,16 @@ async function check(): Promise<void> {
   });
 
   core.info(`Trigger decision: ${decision.shouldRun ? 'RUN' : 'SKIP'} — ${decision.reason}`);
+
+  const apiKeyCheck = checkApiKey(process.env['ANTHROPIC_API_KEY'], decision.shouldRun);
+  if (apiKeyCheck.action === 'fail') {
+    core.setFailed(apiKeyCheck.message);
+    return;
+  }
+  if (apiKeyCheck.action === 'warn') {
+    core.warning(apiKeyCheck.message);
+  }
+
   core.setOutput('should-run', String(decision.shouldRun));
 }
 

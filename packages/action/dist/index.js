@@ -65511,12 +65511,13 @@ async function generateDemoScript(client, analysis, rawDiff, baseUrl, config, ge
 // ../core/dist/recorder/playwright-runner.js
 var import_node_fs2 = require("node:fs");
 var import_node_path = require("node:path");
+var import_node_module = require("node:module");
 async function runScriptAndRecord(options) {
   const { script, baseUrl, recording, outputDir } = options;
   if (!(0, import_node_fs2.existsSync)(outputDir)) {
     (0, import_node_fs2.mkdirSync)(outputDir, { recursive: true });
   }
-  const { chromium } = await import("@playwright/test");
+  const { chromium } = (0, import_node_module.createRequire)((0, import_node_path.join)(process.cwd(), "package.json"))("@playwright/test");
   const browser = await chromium.launch({ headless: true });
   const startTime = Date.now();
   try {
@@ -65767,11 +65768,12 @@ function scanForFfmpeg(cacheDir) {
 // ../core/dist/recorder/fallback.js
 var import_node_fs4 = require("node:fs");
 var import_node_path3 = require("node:path");
+var import_node_module2 = require("node:module");
 async function takeScreenshots(baseUrl, routes, recording, outputDir) {
   if (!(0, import_node_fs4.existsSync)(outputDir)) {
     (0, import_node_fs4.mkdirSync)(outputDir, { recursive: true });
   }
-  const { chromium } = await import("@playwright/test");
+  const { chromium } = (0, import_node_module2.createRequire)((0, import_node_path3.join)(process.cwd(), "package.json"))("@playwright/test");
   const browser = await chromium.launch({ headless: true });
   const screenshots = [];
   try {

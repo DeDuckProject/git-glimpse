@@ -530,7 +530,7 @@ See [CLAUDE.md](CLAUDE.md) for repo structure and contributor notes.
 ## Known limitations
 
 - **Single entry point** — only one preview URL or start command per run is supported; multiple entry points are planned.
-- **LLM provider** — tested with Anthropic; other providers may work but aren't officially supported yet.
+- **LLM provider** — only Anthropic is supported currently; support for other providers is planned.
 
 ---
 

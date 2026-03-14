@@ -65,6 +65,19 @@ not just this one. Every change we make must account for the experience of those
 - **Discuss trade-offs**: if a feature requires consumers to make non-trivial changes (new secrets,
   new workflow jobs, new permissions), flag it in the PR for a deliberate decision.
 
+## Versioning & Releases
+
+We use semver tags (`v1.0.0`) alongside a floating major tag (`v1`) — consumers pin to `@v1`.
+Only bump the major version for breaking changes (e.g. removed/renamed inputs, new required secrets).
+
+To release:
+
+```bash
+./scripts/release.sh 1.0.0
+```
+
+Always use the script — it handles both tags atomically. Never tag manually.
+
 ## Branching Convention
 
 - Features: `feat/<name>`

@@ -53549,6 +53549,10 @@ function parseGlimpseCommand(commentBody, commandPrefix = "/glimpse") {
 }
 
 // ../core/dist/trigger/index.js
+var CONFIG_FILE_PATTERNS = [
+  /^git-glimpse\.config\.[jt]s$/,
+  /^\.github\/workflows\/.*glimpse.*\.ya?ml$/i
+];
 function evaluateTrigger(opts) {
   const { files, triggerConfig, eventType, command } = opts;
   if (command?.force) {
@@ -53566,6 +53570,16 @@ function evaluateTrigger(opts) {
       reason: "Triggered via comment command.",
       matchedFiles: matched2.map((f) => f.path),
       triggerSource: "comment"
+    };
+  }
+  const configFiles = files.filter((f) => CONFIG_FILE_PATTERNS.some((p) => p.test(f.path)));
+  if (configFiles.length > 0) {
+    return {
+      shouldRun: true,
+      reason: `git-glimpse configuration changed (${configFiles.map((f) => f.path).join(", ")}). Running a general app demo to validate the setup.`,
+      matchedFiles: configFiles.map((f) => f.path),
+      triggerSource: "auto",
+      generalDemo: true
     };
   }
   if (triggerConfig.mode === "on-demand") {

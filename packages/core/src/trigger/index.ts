@@ -12,7 +12,15 @@ export interface TriggerDecision {
   reason: string;
   matchedFiles: string[];
   triggerSource: 'auto' | 'comment' | 'force';
+  /** True when triggered by a config/workflow file change — pipeline runs a general app demo. */
+  generalDemo?: boolean;
 }
+
+/** Files whose changes should always trigger a general demo run. */
+const CONFIG_FILE_PATTERNS = [
+  /^git-glimpse\.config\.[jt]s$/,
+  /^\.github\/workflows\/.*glimpse.*\.ya?ml$/i,
+];
 
 export interface EvaluateTriggerOptions {
   files: DiffFile[];
@@ -47,6 +55,19 @@ export function evaluateTrigger(opts: EvaluateTriggerOptions): TriggerDecision {
       reason: 'Triggered via comment command.',
       matchedFiles: matched.map((f) => f.path),
       triggerSource: 'comment',
+    };
+  }
+
+  // Config/workflow file changes always trigger a general demo, regardless of mode.
+  // This lets users validate their git-glimpse setup on a branch before merging.
+  const configFiles = files.filter((f) => CONFIG_FILE_PATTERNS.some((p) => p.test(f.path)));
+  if (configFiles.length > 0) {
+    return {
+      shouldRun: true,
+      reason: `git-glimpse configuration changed (${configFiles.map((f) => f.path).join(', ')}). Running a general app demo to validate the setup.`,
+      matchedFiles: configFiles.map((f) => f.path),
+      triggerSource: 'auto',
+      generalDemo: true,
     };
   }
 

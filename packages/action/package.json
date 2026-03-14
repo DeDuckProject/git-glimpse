@@ -2,7 +2,7 @@
   "name": "@git-glimpse/action",
   "version": "0.1.0",
   "description": "GitHub Action for git-glimpse",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "main": "./dist/index.js",
   "scripts": {
     "build": "pnpm --filter @git-glimpse/core build && esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:@playwright/test --external:playwright-core --external:playwright --sourcemap && esbuild src/check.ts --bundle --platform=node --format=cjs --outfile=dist/check.js --external:@playwright/test --external:playwright-core --external:playwright --sourcemap",

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Auto-generate visual demo clips of UI changes in pull requests",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "engines": {
     "node": ">=20"
   },

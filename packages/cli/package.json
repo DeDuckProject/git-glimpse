@@ -2,7 +2,7 @@
   "name": "git-glimpse",
   "version": "0.1.0",
   "description": "CLI for git-glimpse — auto-generate visual demo clips for PR changes",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "bin": {
     "git-glimpse": "./dist/index.js"

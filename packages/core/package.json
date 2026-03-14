@@ -2,7 +2,7 @@
   "name": "@git-glimpse/core",
   "version": "0.1.0",
   "description": "Core library for git-glimpse",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

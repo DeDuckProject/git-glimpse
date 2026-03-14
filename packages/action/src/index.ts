@@ -175,7 +175,7 @@ async function run(): Promise<void> {
 
   try {
     core.info('Running git-glimpse pipeline...');
-    const result = await runPipeline({ diff, baseUrl, outputDir: './recordings', config });
+    const result = await runPipeline({ diff, baseUrl, outputDir: './recordings', config, generalDemo: decision.generalDemo });
 
     if (result.errors.length > 0) {
       core.warning(`Pipeline completed with errors:\n${result.errors.join('\n')}`);

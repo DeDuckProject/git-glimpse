@@ -15,6 +15,8 @@ export interface PipelineOptions {
   baseUrl: string;
   outputDir?: string;
   config: GitGlimpseConfig;
+  /** When true, skip UI-file filtering and run a general app overview demo. */
+  generalDemo?: boolean;
 }
 
 export interface DemoResult {
@@ -33,7 +35,7 @@ export interface DemoResult {
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<DemoResult> {
-  const { diff, baseUrl, config } = options;
+  const { diff, baseUrl, config, generalDemo = false } = options;
   const outputDir = options.outputDir ?? './recordings';
   const errors: string[] = [];
 
@@ -48,20 +50,23 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
 
   // 1. Parse diff
   const parsedDiff = parseDiff(diff);
-  const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
-  if (uiFiles.length === 0) {
-    return {
-      success: false,
-      script: '',
-      analysis: {
-        changedFiles: parsedDiff.files.map((f) => f.path),
-        affectedRoutes: [],
-        changeDescription: 'No UI files changed.',
-        suggestedDemoFlow: '',
-      },
-      attempts: 0,
-      errors: ['No UI files detected in diff'],
-    };
+
+  if (!generalDemo) {
+    const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
+    if (uiFiles.length === 0) {
+      return {
+        success: false,
+        script: '',
+        analysis: {
+          changedFiles: parsedDiff.files.map((f) => f.path),
+          affectedRoutes: [],
+          changeDescription: 'No UI files changed.',
+          suggestedDemoFlow: '',
+        },
+        attempts: 0,
+        errors: ['No UI files detected in diff'],
+      };
+    }
   }
 
   // 2. Detect routes
@@ -84,7 +89,8 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
     analysis,
     diff,
     baseUrl,
-    config
+    config,
+    generalDemo
   );
   errors.push(...genErrors);
 

@@ -64,6 +64,42 @@ export async function demo(page: Page): Promise<void> {
 }`;
 }
 
+export function buildGeneralDemoPrompt(options: Pick<ScriptPromptOptions, 'baseUrl' | 'maxDuration' | 'viewport'>): string {
+  return `You are a Playwright script generator. Generate a TypeScript Playwright script that records a general overview demo of a web app — as if showing it to someone for the first time.
+
+## Goal
+Produce a short, visually engaging tour that demonstrates the app is running and shows its main UI. This is a setup-validation demo, not a feature showcase.
+
+## Rules
+- Navigate to the home page and 1-2 other meaningful routes if they exist
+- Scroll gently to reveal content, hover over key UI elements
+- Do NOT test anything — just demonstrate that the app loads and looks reasonable
+- Use resilient selectors: text content > ARIA roles > CSS classes
+- Act as a real user: only interact through the UI. Never re-implement app features in the script.
+- Do NOT inject code via \`page.evaluate\`, \`page.addInitScript\`, or inline scripts/styles
+- Always call \`await page.waitForLoadState('networkidle')\` after navigation
+
+## Timing
+- Total demo under ${options.maxDuration} seconds
+- Use \`await page.waitForTimeout(400)\` between actions — keep it brisk
+
+## Mouse movement
+- Move naturally before clicks: one intermediate \`page.mouse.move(x, y)\` waypoint is enough
+- Use plausible coordinates within the ${options.viewport.width}x${options.viewport.height} viewport
+
+## Context
+- Base URL: ${options.baseUrl}
+- Viewport: ${options.viewport.width}x${options.viewport.height}
+
+## Output format
+Respond with ONLY the TypeScript script, no markdown fences, no explanation:
+
+import type { Page } from '@playwright/test';
+
+export async function demo(page: Page): Promise<void> {
+}`;
+}
+
 export function buildRetryPrompt(
   originalScript: string,
   errorMessage: string,

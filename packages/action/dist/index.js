@@ -65396,6 +65396,41 @@ export async function demo(page: Page): Promise<void> {
   // your implementation
 }`;
 }
+function buildGeneralDemoPrompt(options) {
+  return `You are a Playwright script generator. Generate a TypeScript Playwright script that records a general overview demo of a web app \u2014 as if showing it to someone for the first time.
+
+## Goal
+Produce a short, visually engaging tour that demonstrates the app is running and shows its main UI. This is a setup-validation demo, not a feature showcase.
+
+## Rules
+- Navigate to the home page and 1-2 other meaningful routes if they exist
+- Scroll gently to reveal content, hover over key UI elements
+- Do NOT test anything \u2014 just demonstrate that the app loads and looks reasonable
+- Use resilient selectors: text content > ARIA roles > CSS classes
+- Act as a real user: only interact through the UI. Never re-implement app features in the script.
+- Do NOT inject code via \`page.evaluate\`, \`page.addInitScript\`, or inline scripts/styles
+- Always call \`await page.waitForLoadState('networkidle')\` after navigation
+
+## Timing
+- Total demo under ${options.maxDuration} seconds
+- Use \`await page.waitForTimeout(400)\` between actions \u2014 keep it brisk
+
+## Mouse movement
+- Move naturally before clicks: one intermediate \`page.mouse.move(x, y)\` waypoint is enough
+- Use plausible coordinates within the ${options.viewport.width}x${options.viewport.height} viewport
+
+## Context
+- Base URL: ${options.baseUrl}
+- Viewport: ${options.viewport.width}x${options.viewport.height}
+
+## Output format
+Respond with ONLY the TypeScript script, no markdown fences, no explanation:
+
+import type { Page } from '@playwright/test';
+
+export async function demo(page: Page): Promise<void> {
+}`;
+}
 function buildRetryPrompt(originalScript, errorMessage, screenshotDescription, options) {
   return `The following Playwright demo script failed with an error. Please fix it.
 
@@ -65442,7 +65477,7 @@ function stripMarkdownFences(script) {
 
 // ../core/dist/generator/script-generator.js
 var MAX_RETRIES = 2;
-async function generateDemoScript(client, analysis, rawDiff, baseUrl, config) {
+async function generateDemoScript(client, analysis, rawDiff, baseUrl, config, generalDemo = false) {
   const recording = config.recording ?? { viewport: { width: 1280, height: 720 }, maxDuration: 30, format: "gif", deviceScaleFactor: 2 };
   const llm = config.llm ?? { provider: "anthropic", model: "claude-sonnet-4-6" };
   const promptOptions = {
@@ -65456,7 +65491,7 @@ async function generateDemoScript(client, analysis, rawDiff, baseUrl, config) {
   const errors = [];
   let lastScript = "";
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
-    const prompt = attempt === 1 ? buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
+    const prompt = attempt === 1 ? generalDemo ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport }) : buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
     const response = await client.messages.create({
       model: llm.model,
       max_tokens: 4096,
@@ -65767,7 +65802,7 @@ function sanitizeRoute(route) {
 
 // ../core/dist/pipeline.js
 async function runPipeline(options) {
-  const { diff, baseUrl, config } = options;
+  const { diff, baseUrl, config, generalDemo = false } = options;
   const outputDir = options.outputDir ?? "./recordings";
   const errors = [];
   const recording = config.recording ?? {
@@ -65779,20 +65814,22 @@ async function runPipeline(options) {
   };
   const llm = config.llm ?? { provider: "anthropic", model: "claude-sonnet-4-6" };
   const parsedDiff = parseDiff(diff);
-  const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
-  if (uiFiles.length === 0) {
-    return {
-      success: false,
-      script: "",
-      analysis: {
-        changedFiles: parsedDiff.files.map((f2) => f2.path),
-        affectedRoutes: [],
-        changeDescription: "No UI files changed.",
-        suggestedDemoFlow: ""
-      },
-      attempts: 0,
-      errors: ["No UI files detected in diff"]
-    };
+  if (!generalDemo) {
+    const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
+    if (uiFiles.length === 0) {
+      return {
+        success: false,
+        script: "",
+        analysis: {
+          changedFiles: parsedDiff.files.map((f2) => f2.path),
+          affectedRoutes: [],
+          changeDescription: "No UI files changed.",
+          suggestedDemoFlow: ""
+        },
+        attempts: 0,
+        errors: ["No UI files detected in diff"]
+      };
+    }
   }
   const routes = detectRoutes(parsedDiff, {
     routeMap: config.routeMap,
@@ -65803,7 +65840,7 @@ async function runPipeline(options) {
     throw new Error("ANTHROPIC_API_KEY environment variable is required");
   const client = new sdk_default({ apiKey });
   const analysis = await summarizeChanges(client, parsedDiff, routes, llm.model);
-  const { script, attempts, errors: genErrors } = await generateDemoScript(client, analysis, diff, baseUrl, config);
+  const { script, attempts, errors: genErrors } = await generateDemoScript(client, analysis, diff, baseUrl, config, generalDemo);
   errors.push(...genErrors);
   try {
     const recordingResult = await runScriptAndRecord({
@@ -70152,6 +70189,10 @@ function parseGlimpseCommand(commentBody, commandPrefix = "/glimpse") {
 }
 
 // ../core/dist/trigger/index.js
+var CONFIG_FILE_PATTERNS = [
+  /^git-glimpse\.config\.[jt]s$/,
+  /^\.github\/workflows\/.*glimpse.*\.ya?ml$/i
+];
 function evaluateTrigger(opts) {
   const { files, triggerConfig, eventType, command } = opts;
   if (command?.force) {
@@ -70169,6 +70210,16 @@ function evaluateTrigger(opts) {
       reason: "Triggered via comment command.",
       matchedFiles: matched2.map((f2) => f2.path),
       triggerSource: "comment"
+    };
+  }
+  const configFiles = files.filter((f2) => CONFIG_FILE_PATTERNS.some((p2) => p2.test(f2.path)));
+  if (configFiles.length > 0) {
+    return {
+      shouldRun: true,
+      reason: `git-glimpse configuration changed (${configFiles.map((f2) => f2.path).join(", ")}). Running a general app demo to validate the setup.`,
+      matchedFiles: configFiles.map((f2) => f2.path),
+      triggerSource: "auto",
+      generalDemo: true
     };
   }
   if (triggerConfig.mode === "on-demand") {
@@ -70341,7 +70392,7 @@ async function run() {
   }
   try {
     core.info("Running git-glimpse pipeline...");
-    const result = await runPipeline({ diff, baseUrl, outputDir: "./recordings", config });
+    const result = await runPipeline({ diff, baseUrl, outputDir: "./recordings", config, generalDemo: decision.generalDemo });
     if (result.errors.length > 0) {
       core.warning(`Pipeline completed with errors:
 ${result.errors.join("\n")}`);

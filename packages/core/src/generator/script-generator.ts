@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ChangeAnalysis } from '../analyzer/change-summarizer.js';
 import type { GitGlimpseConfig } from '../config/schema.js';
-import { buildScriptGenerationPrompt, buildRetryPrompt, type ScriptPromptOptions } from './prompts.js';
+import { buildScriptGenerationPrompt, buildGeneralDemoPrompt, buildRetryPrompt, type ScriptPromptOptions } from './prompts.js';
 import { validateScript } from './validator.js';
 
 const MAX_RETRIES = 2;
@@ -17,7 +17,8 @@ export async function generateDemoScript(
   analysis: ChangeAnalysis,
   rawDiff: string,
   baseUrl: string,
-  config: GitGlimpseConfig
+  config: GitGlimpseConfig,
+  generalDemo = false
 ): Promise<ScriptGenerationResult> {
   const recording = config.recording ?? { viewport: { width: 1280, height: 720 }, maxDuration: 30, format: 'gif' as const, deviceScaleFactor: 2 };
   const llm = config.llm ?? { provider: 'anthropic' as const, model: 'claude-sonnet-4-6' };
@@ -37,7 +38,9 @@ export async function generateDemoScript(
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
     const prompt =
       attempt === 1
-        ? buildScriptGenerationPrompt(promptOptions)
+        ? (generalDemo
+            ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport })
+            : buildScriptGenerationPrompt(promptOptions))
         : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? '', '', promptOptions);
 
     const response = await client.messages.create({

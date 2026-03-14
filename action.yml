@@ -1,0 +1,41 @@
+name: 'GitGlimpse'
+description: 'Auto-generate visual demo clips for UI changes in pull requests'
+author: 'git-glimpse'
+branding:
+  icon: 'video'
+  color: 'purple'
+
+inputs:
+  trigger-mode:
+    description: 'Trigger mode: auto, on-demand, or smart (overrides config file)'
+    required: false
+  start-command:
+    description: 'Command to start the app (overrides config file)'
+    required: false
+  preview-url:
+    description: 'External preview deployment URL (e.g., from Vercel)'
+    required: false
+  config-path:
+    description: 'Path to git-glimpse.config.ts'
+    default: 'git-glimpse.config.ts'
+    required: false
+  format:
+    description: 'Output format: gif, mp4, or webm'
+    default: 'gif'
+    required: false
+  max-duration:
+    description: 'Max recording duration in seconds'
+    default: '30'
+    required: false
+
+outputs:
+  recording-url:
+    description: 'URL of the uploaded recording artifact'
+  comment-url:
+    description: 'URL of the posted PR comment'
+  success:
+    description: 'Whether the recording succeeded (true/false)'
+
+runs:
+  using: 'node20'
+  main: 'packages/action/dist/index.js'

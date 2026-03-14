@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resolveBaseUrl } from '../../packages/action/src/index.js';
+import { resolveBaseUrl } from '../../packages/action/src/resolve-base-url.js';
 import type { GitGlimpseConfig } from '../../packages/core/src/config/schema.js';
 
 function makeConfig(app: GitGlimpseConfig['app']): GitGlimpseConfig {

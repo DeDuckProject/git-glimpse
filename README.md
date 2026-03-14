@@ -359,6 +359,10 @@ export default {
 
     // Option B: Use an existing deploy preview
     // previewUrl: 'VERCEL_URL',      // env var name or literal URL
+
+    // Hint: extra context injected into every LLM prompt.
+    // Use this to tell the LLM about authentication, test accounts, app quirks, etc.
+    hint: 'Use email demo@example.com and password "password" to log in.',
   },
 
   // ── Trigger ───────────────────────────────────────────────────────────────
@@ -434,6 +438,30 @@ GitGlimpse automatically maps changed files to URLs using framework conventions:
 | SvelteKit | `src/routes/products/[id]/+page.svelte` | `/products/:id` |
 
 For files outside these conventions, use `routeMap` in the config to explicitly map them.
+
+---
+
+## Passing hints to the LLM
+
+The `app.hint` field lets you inject free-form context into every LLM prompt. The text is included verbatim under an **"App-specific notes"** heading, so the model sees it before generating any Playwright script.
+
+Common uses:
+
+- **Authentication** — tell the LLM which test account to use so it can log in before navigating to the changed page.
+- **Seed data** — describe what records exist in the database so the script can interact with realistic content.
+- **App quirks** — explain non-obvious UI patterns (e.g. a custom modal, a multi-step wizard) so the model handles them correctly.
+
+```typescript
+export default {
+  app: {
+    startCommand: 'npm run dev',
+    // Injected into every prompt sent to the LLM
+    hint: 'Use email demo@example.com and password "password" to log in before navigating anywhere.',
+  },
+} satisfies GitGlimpseConfig;
+```
+
+The hint is applied to both diff-driven scripts and general overview demos, so it is always available regardless of trigger mode.
 
 ---
 

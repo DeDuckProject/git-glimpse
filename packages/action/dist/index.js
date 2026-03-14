@@ -65381,7 +65381,10 @@ function buildScriptGenerationPrompt(options) {
 - Affected routes:
 ${routeList}
 - Suggested demo flow: ${options.demoFlow}
-
+${options.hint ? `
+## App-specific notes
+${options.hint}
+` : ""}
 ## Diff
 \`\`\`
 ${truncatedDiff}
@@ -65422,7 +65425,10 @@ Produce a short, visually engaging tour that demonstrates the app is running and
 ## Context
 - Base URL: ${options.baseUrl}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
-
+${options.hint ? `
+## App-specific notes
+${options.hint}
+` : ""}
 ## Output format
 Respond with ONLY the TypeScript script, no markdown fences, no explanation:
 
@@ -65486,12 +65492,13 @@ async function generateDemoScript(client, analysis, rawDiff, baseUrl, config, ge
     routes: analysis.affectedRoutes,
     demoFlow: analysis.suggestedDemoFlow,
     maxDuration: recording.maxDuration,
-    viewport: recording.viewport
+    viewport: recording.viewport,
+    hint: config.app.hint
   };
   const errors = [];
   let lastScript = "";
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
-    const prompt = attempt === 1 ? generalDemo ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport }) : buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
+    const prompt = attempt === 1 ? generalDemo ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport, hint: config.app.hint }) : buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
     const response = await client.messages.create({
       model: llm.model,
       max_tokens: 4096,
@@ -69948,7 +69955,9 @@ var AppConfigSchema = external_exports.object({
     timeout: external_exports.number().default(3e4)
   }).optional(),
   previewUrl: external_exports.string().optional(),
-  env: external_exports.record(external_exports.string()).optional()
+  env: external_exports.record(external_exports.string()).optional(),
+  /** Extra context appended to every LLM prompt (e.g. auth instructions, app-specific notes). */
+  hint: external_exports.string().optional()
 });
 var RecordingConfigSchema = external_exports.object({
   viewport: external_exports.object({

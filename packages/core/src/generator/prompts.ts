@@ -7,6 +7,7 @@ export interface ScriptPromptOptions {
   demoFlow: string;
   maxDuration: number;
   viewport: { width: number; height: number };
+  hint?: string;
 }
 
 export function buildScriptGenerationPrompt(options: ScriptPromptOptions): string {
@@ -48,7 +49,7 @@ export function buildScriptGenerationPrompt(options: ScriptPromptOptions): strin
 - Affected routes:
 ${routeList}
 - Suggested demo flow: ${options.demoFlow}
-
+${options.hint ? `\n## App-specific notes\n${options.hint}\n` : ''}
 ## Diff
 \`\`\`
 ${truncatedDiff}
@@ -64,7 +65,7 @@ export async function demo(page: Page): Promise<void> {
 }`;
 }
 
-export function buildGeneralDemoPrompt(options: Pick<ScriptPromptOptions, 'baseUrl' | 'maxDuration' | 'viewport'>): string {
+export function buildGeneralDemoPrompt(options: Pick<ScriptPromptOptions, 'baseUrl' | 'maxDuration' | 'viewport' | 'hint'>): string {
   return `You are a Playwright script generator. Generate a TypeScript Playwright script that records a general overview demo of a web app — as if showing it to someone for the first time.
 
 ## Goal
@@ -90,7 +91,7 @@ Produce a short, visually engaging tour that demonstrates the app is running and
 ## Context
 - Base URL: ${options.baseUrl}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
-
+${options.hint ? `\n## App-specific notes\n${options.hint}\n` : ''}
 ## Output format
 Respond with ONLY the TypeScript script, no markdown fences, no explanation:
 

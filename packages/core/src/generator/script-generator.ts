@@ -30,6 +30,7 @@ export async function generateDemoScript(
     demoFlow: analysis.suggestedDemoFlow,
     maxDuration: recording.maxDuration,
     viewport: recording.viewport,
+    hint: config.app.hint,
   };
 
   const errors: string[] = [];
@@ -39,7 +40,7 @@ export async function generateDemoScript(
     const prompt =
       attempt === 1
         ? (generalDemo
-            ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport })
+            ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport, hint: config.app.hint })
             : buildScriptGenerationPrompt(promptOptions))
         : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? '', '', promptOptions);
 

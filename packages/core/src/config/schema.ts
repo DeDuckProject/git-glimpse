@@ -22,6 +22,8 @@ export const AppConfigSchema = z.object({
     .optional(),
   previewUrl: z.string().optional(),
   env: z.record(z.string()).optional(),
+  /** Extra context appended to every LLM prompt (e.g. auth instructions, app-specific notes). */
+  hint: z.string().optional(),
 });
 
 export const RecordingConfigSchema = z.object({

@@ -1,5 +1,6 @@
 import { mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
 import type { RecordingConfig } from '../config/schema.js';
 import type { RouteMapping } from '../analyzer/route-detector.js';
 
@@ -17,7 +18,7 @@ export async function takeScreenshots(
     mkdirSync(outputDir, { recursive: true });
   }
 
-  const { chromium } = await import('@playwright/test');
+  const { chromium } = createRequire(join(process.cwd(), 'package.json'))('@playwright/test') as typeof import('@playwright/test');
   const browser = await chromium.launch({ headless: true });
   const screenshots: string[] = [];
 

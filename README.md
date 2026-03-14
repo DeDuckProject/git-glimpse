@@ -509,8 +509,6 @@ Each GitGlimpse run makes one or more LLM calls to generate the Playwright inter
 | Input | ~205k total | ~83% | ~50% |
 | Output | ~42k total | ~17% | ~50% |
 
-**Key insight:** Output tokens drive roughly **50% of the cost** despite representing only **17% of the token volume** — a direct consequence of output tokens being priced ~5× higher than input tokens in most Claude pricing tiers. Reducing script verbosity or capping `maxDuration` can lower output token counts and trim costs noticeably.
-
 For high-frequency teams, use `trigger.mode: 'smart'` or `'on-demand'` to avoid running the LLM on every push.
 
 ---
@@ -526,6 +524,13 @@ pnpm run test:llm           # full pipeline with real LLM (requires ANTHROPIC_AP
 ```
 
 See [CLAUDE.md](CLAUDE.md) for repo structure and contributor notes.
+
+---
+
+## Roadmap
+
+- **Multiple preview URL support** — currently GitGlimpse accepts a single preview URL per run; planned support for specifying multiple starting points so a single PR can record demos across several routes or environments simultaneously.
+- **GitHub App** — a first-party GitHub App to reduce setup friction: no workflow files to copy, no secrets to configure manually, and automatic installation across repos in an organization.
 
 ---
 

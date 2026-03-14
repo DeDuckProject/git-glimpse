@@ -13,6 +13,7 @@ import {
   DEFAULT_TRIGGER,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
+import { resolveBaseUrl } from './resolve-base-url.js';
 
 function streamCommand(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -154,13 +155,12 @@ async function run(): Promise<void> {
     return;
   }
 
-  const baseUrl = resolveBaseUrl(config, previewUrlInput);
-  if (!baseUrl) {
-    core.setFailed(
-      'No base URL available. Set app.previewUrl or app.startCommand + app.readyWhen in config.'
-    );
+  const baseUrlResult = resolveBaseUrl(config, previewUrlInput);
+  if (!baseUrlResult.url) {
+    core.setFailed(baseUrlResult.error!);
     return;
   }
+  const baseUrl = baseUrlResult.url;
 
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
@@ -225,18 +225,6 @@ async function run(): Promise<void> {
   }
 }
 
-function resolveBaseUrl(config: GitGlimpseConfig, previewUrlOverride?: string): string | null {
-  const previewUrl = previewUrlOverride ?? config.app.previewUrl;
-  if (previewUrl) {
-    const resolved = process.env[previewUrl] ?? previewUrl;
-    return resolved.startsWith('http') ? resolved : null;
-  }
-  if (config.app.readyWhen?.url) {
-    const u = new URL(config.app.readyWhen.url);
-    return u.origin;
-  }
-  return 'http://localhost:3000';
-}
 
 async function startApp(
   startCommand: string,

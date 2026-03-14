@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
-import { existsSync, writeFileSync, unlinkSync } from 'node:fs';
-import { resolve, extname } from 'node:path';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { resolve, dirname, extname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GitGlimpseConfigSchema, type GitGlimpseConfig } from './schema.js';
 import { DEFAULT_RECORDING, DEFAULT_LLM, DEFAULT_TRIGGER } from './defaults.js';
@@ -11,19 +11,15 @@ async function importConfigFile(filePath: string): Promise<unknown> {
     return mod.default ?? mod;
   }
 
-  // Transpile .ts config via esbuild before importing
-  const { build } = await import('esbuild');
-  const result = await build({
-    entryPoints: [filePath],
-    bundle: true,
-    platform: 'node',
-    format: 'esm',
-    write: false,
-  });
+  // Transpile .ts config via sucrase (pure JS, fully bundleable, no native deps)
+  const { transform } = await import('sucrase');
+  const source = readFileSync(filePath, 'utf-8');
+  const { code } = transform(source, { transforms: ['typescript'] });
 
-  const tmpFile = resolve(tmpdir(), `git-glimpse-config-${Date.now()}.mjs`);
+  // Write next to the original so relative imports in the config resolve correctly
+  const tmpFile = resolve(dirname(filePath), `.git-glimpse-config-${Date.now()}.mjs`);
   try {
-    writeFileSync(tmpFile, result.outputFiles[0].text);
+    writeFileSync(tmpFile, code);
     const mod = await import(pathToFileURL(tmpFile).href);
     return mod.default ?? mod;
   } finally {

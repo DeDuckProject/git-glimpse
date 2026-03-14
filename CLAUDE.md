@@ -67,38 +67,16 @@ not just this one. Every change we make must account for the experience of those
 
 ## Versioning & Releases
 
-We follow the standard GitHub Actions versioning convention using semantic versioning tags
-alongside floating major tags.
+We use semver tags (`v1.0.0`) alongside a floating major tag (`v1`) — consumers pin to `@v1`.
+Only bump the major version for breaking changes (e.g. removed/renamed inputs, new required secrets).
 
-- **Semantic tags** (`v1.0.0`, `v1.2.3`) are immutable and mark exact releases.
-- **Floating major tags** (`v1`, `v2`) always point to the latest non-breaking release
-  in that major line. Consumers use `uses: DeDuckProject/git-glimpse@v1` to stay on the
-  latest compatible version.
-- Only cut `v2` (bump the major version) for **breaking changes**.
-
-### What counts as a breaking change
-
-- Removing or renaming an existing action input or output
-- Changing the default behavior of an existing input in a way that alters results
-- Requiring a new permission, secret, or workflow event that consumers must add
-- Dropping support for a previously supported runner OS or Node version
-
-### How to release
+To release:
 
 ```bash
-./scripts/release.sh <version>   # e.g. ./scripts/release.sh 1.0.0
+./scripts/release.sh 1.0.0
 ```
 
-The script will:
-1. Create the immutable tag `v<version>`
-2. Force-move the floating major tag (`v1`, `v2`, etc.) to the same commit
-3. Push both tags to origin
-
-A GitHub Actions workflow (`.github/workflows/release.yml`) automatically creates a
-GitHub Release with auto-generated release notes when a `v*.*.*` tag is pushed.
-
-**Important:** Never push a release without updating both the semantic and floating tags.
-The release script handles this automatically — always use it instead of manual tagging.
+Always use the script — it handles both tags atomically. Never tag manually.
 
 ## Branching Convention
 

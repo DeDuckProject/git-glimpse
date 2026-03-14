@@ -53433,7 +53433,9 @@ var AppConfigSchema = external_exports.object({
     timeout: external_exports.number().default(3e4)
   }).optional(),
   previewUrl: external_exports.string().optional(),
-  env: external_exports.record(external_exports.string()).optional()
+  env: external_exports.record(external_exports.string()).optional(),
+  /** Extra context appended to every LLM prompt (e.g. auth instructions, app-specific notes). */
+  hint: external_exports.string().optional()
 });
 var RecordingConfigSchema = external_exports.object({
   viewport: external_exports.object({

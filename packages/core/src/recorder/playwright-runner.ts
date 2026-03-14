@@ -136,14 +136,10 @@ async function executeScript(script: string, page: Page, _baseUrl: string): Prom
   const { writeFileSync, unlinkSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { pathToFileURL } = await import('node:url');
-  const { transformSync } = await import('esbuild');
+  const { transform } = await import('sucrase');
 
-  // Transpile TypeScript → ESM JavaScript via esbuild
-  const { code } = transformSync(script, {
-    loader: 'ts',
-    format: 'esm',
-    target: 'node20',
-  });
+  // Transpile TypeScript → ESM JavaScript via sucrase (pure JS, no native deps)
+  const { code } = transform(script, { transforms: ['typescript'] });
 
   const tmpPath = join(tmpdir(), `git-glimpse-script-${Date.now()}.mjs`);
   writeFileSync(tmpPath, code, 'utf-8');

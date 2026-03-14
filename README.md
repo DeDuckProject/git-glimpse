@@ -488,6 +488,31 @@ The PR comment is always posted — with a GIF if recording succeeded, or screen
 
 ---
 
+## Costs
+
+> **Disclaimer:** The figures below are based on the maintainer's own testing and may not reflect your usage patterns. Token consumption varies significantly by diff size, app complexity, and retry count. Use these numbers as a rough reference only — your costs may be higher or lower.
+
+Each GitGlimpse run makes one or more LLM calls to generate the Playwright interaction script. The table below summarizes observed costs using `claude-sonnet-4-6` with default settings.
+
+| Metric | Value |
+|---|---|
+| Average cost per request | ~$0.015 (1.5¢) |
+| 95th percentile | ~$0.035 |
+| Peak (max observed) | ~$0.047 |
+| Requests per USD | ~66 |
+| Sample size | ~82 requests / 246k tokens |
+
+**Token breakdown (per request, approximate):**
+
+| Token type | Volume | Share of tokens | Share of cost |
+|---|---|---|---|
+| Input | ~205k total | ~83% | ~50% |
+| Output | ~42k total | ~17% | ~50% |
+
+For high-frequency teams, use `trigger.mode: 'smart'` or `'on-demand'` to avoid running the LLM on every push.
+
+---
+
 ## Development
 
 ```bash
@@ -499,6 +524,13 @@ pnpm run test:llm           # full pipeline with real LLM (requires ANTHROPIC_AP
 ```
 
 See [CLAUDE.md](CLAUDE.md) for repo structure and contributor notes.
+
+---
+
+## Roadmap
+
+- **Multiple preview URL support** — currently GitGlimpse accepts a single preview URL per run; planned support for specifying multiple starting points so a single PR can record demos across several routes or environments simultaneously.
+- **GitHub App** — a first-party GitHub App to reduce setup friction: no workflow files to copy, no secrets to configure manually, and automatic installation across repos in an organization.
 
 ---
 

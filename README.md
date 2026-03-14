@@ -529,8 +529,8 @@ See [CLAUDE.md](CLAUDE.md) for repo structure and contributor notes.
 
 ## Known limitations
 
-- **Single entry point** — only one preview URL or start command per run is supported; recording across multiple routes in a single run is on the roadmap.
-- **Anthropic only (tested)** — the `llm.provider` config accepts `'openai'` as a value, but only Anthropic has been tested end-to-end. Other providers may work but are unsupported for now.
+- **Single entry point** — only one preview URL or start command per run is supported; multiple entry points are planned.
+- **LLM provider** — tested with Anthropic; other providers may work but aren't officially supported yet.
 
 ---
 

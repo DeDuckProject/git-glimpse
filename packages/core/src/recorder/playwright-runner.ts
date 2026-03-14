@@ -1,8 +1,8 @@
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { createRequire } from 'node:module';
 import type { RecordingConfig } from '../config/schema.js';
+import { ensurePlaywright } from './ensure-playwright.js';
 
 export interface RecordingResult {
   videoPath: string;
@@ -23,10 +23,8 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
     mkdirSync(outputDir, { recursive: true });
   }
 
-  // Resolve @playwright/test from the user's project (process.cwd()), not from the
-  // action's own dist directory. This is necessary when running as a GitHub Action,
-  // where the action bundle lives in a separate directory from the user's node_modules.
-  const { chromium } = createRequire(join(process.cwd(), 'package.json'))('@playwright/test') as typeof import('@playwright/test');
+  // Resolve @playwright/test from the consumer's project, or auto-install it if missing.
+  const { chromium } = await ensurePlaywright();
   const browser = await chromium.launch({ headless: true });
   const startTime = Date.now();
 

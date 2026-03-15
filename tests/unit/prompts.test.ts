@@ -6,9 +6,9 @@ import {
 import type { ScriptPromptOptions } from '../../packages/core/src/generator/prompts.js';
 
 const BASE_OPTIONS: ScriptPromptOptions = {
-  baseUrl: 'http://localhost:3000',
+  entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
   diff: 'diff --git a/src/Button.tsx b/src/Button.tsx\n+export function Button() {}',
-  routes: [{ route: '/', file: 'src/Button.tsx' }],
+  routes: [{ route: '/', file: 'src/Button.tsx', entry: 'default', changeType: 'modified' }],
   demoFlow: 'Navigate to home and click the button',
   maxDuration: 30,
   viewport: { width: 1280, height: 720 },
@@ -44,11 +44,36 @@ describe('buildScriptGenerationPrompt', () => {
     expect(hintPos).toBeGreaterThan(-1);
     expect(hintPos).toBeLessThan(diffPos);
   });
+
+  it('shows single base URL for single entry point', () => {
+    const prompt = buildScriptGenerationPrompt(BASE_OPTIONS);
+    expect(prompt).toContain('Base URL: http://localhost:3000');
+    expect(prompt).not.toContain('Entry points:');
+  });
+
+  it('lists multiple entry points when provided', () => {
+    const prompt = buildScriptGenerationPrompt({
+      ...BASE_OPTIONS,
+      entryPoints: [
+        { name: 'admin', baseUrl: 'http://localhost:3000' },
+        { name: 'storefront', baseUrl: 'http://localhost:4000' },
+      ],
+      routes: [
+        { route: '/', file: 'app/routes/_index.tsx', entry: 'admin', changeType: 'modified' },
+        { route: '/products/ring', file: 'extensions/tryon.liquid', entry: 'storefront', changeType: 'modified' },
+      ],
+    });
+    expect(prompt).toContain('admin: http://localhost:3000');
+    expect(prompt).toContain('storefront: http://localhost:4000');
+    expect(prompt).toContain('[admin] /');
+    expect(prompt).toContain('[storefront] /products/ring');
+    expect(prompt).toContain('## Multiple entry points');
+  });
 });
 
 describe('buildGeneralDemoPrompt', () => {
   const BASE_GENERAL = {
-    baseUrl: 'http://localhost:3000',
+    entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
     maxDuration: 30,
     viewport: { width: 1280, height: 720 },
   };

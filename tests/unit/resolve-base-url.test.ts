@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resolveBaseUrl } from '../../packages/action/src/resolve-base-url.js';
+import { resolveBaseUrl, resolveEntryPointUrls } from '../../packages/action/src/resolve-base-url.js';
 import type { GitGlimpseConfig } from '../../packages/core/src/config/schema.js';
 
 function makeConfig(app: GitGlimpseConfig['app']): GitGlimpseConfig {
@@ -69,5 +69,58 @@ describe('resolveBaseUrl', () => {
       'OVERRIDE_URL'
     );
     expect(result.url).toBe('https://override.example.com');
+  });
+
+  it('handles array app config by using the first entry', () => {
+    const config = makeConfig([
+      { name: 'admin', startCommand: 'npm run dev', readyWhen: { url: 'http://localhost:3000/health' } },
+      { name: 'storefront', previewUrl: 'https://store.example.com' },
+    ] as any);
+    const result = resolveBaseUrl(config);
+    expect(result.url).toBe('http://localhost:3000');
+  });
+});
+
+describe('resolveEntryPointUrls', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('resolves multiple entry points', () => {
+    const result = resolveEntryPointUrls([
+      { name: 'admin', readyWhen: { url: 'http://localhost:3000/health', status: 200, timeout: 30000 } },
+      { name: 'storefront', previewUrl: 'https://store.example.com' },
+    ]);
+    expect(result.error).toBeUndefined();
+    expect(result.entryPoints).toHaveLength(2);
+    expect(result.entryPoints![0]).toEqual({ name: 'admin', baseUrl: 'http://localhost:3000' });
+    expect(result.entryPoints![1]).toEqual({ name: 'storefront', baseUrl: 'https://store.example.com' });
+  });
+
+  it('applies previewUrlOverride to the first entry point only', () => {
+    const result = resolveEntryPointUrls(
+      [
+        { name: 'admin', readyWhen: { url: 'http://localhost:3000', status: 200, timeout: 30000 } },
+        { name: 'storefront', readyWhen: { url: 'http://localhost:4000', status: 200, timeout: 30000 } },
+      ],
+      'https://override.example.com'
+    );
+    expect(result.entryPoints![0]!.baseUrl).toBe('https://override.example.com');
+    expect(result.entryPoints![1]!.baseUrl).toBe('http://localhost:4000');
+  });
+
+  it('returns error if an entry point fails resolution', () => {
+    process.env['BAD_VAR'] = 'not-a-url';
+    const result = resolveEntryPointUrls([
+      { name: 'admin', previewUrl: 'BAD_VAR' },
+    ]);
+    expect(result.error).toMatch(/admin/);
+    expect(result.error).toMatch(/not a valid URL/);
   });
 });

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecordingConfig } from '../config/schema.js';
 import { ensurePlaywright } from './ensure-playwright.js';
+import type { EntryPointUrl } from '../pipeline.js';
 
 export interface RecordingResult {
   videoPath: string;
@@ -11,13 +12,13 @@ export interface RecordingResult {
 
 export interface RunScriptOptions {
   script: string;
-  baseUrl: string;
+  entryPoints: EntryPointUrl[];
   recording: RecordingConfig;
   outputDir: string;
 }
 
 export async function runScriptAndRecord(options: RunScriptOptions): Promise<RecordingResult> {
-  const { script, baseUrl, recording, outputDir } = options;
+  const { script, entryPoints, recording, outputDir } = options;
 
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir, { recursive: true });
@@ -40,10 +41,10 @@ export async function runScriptAndRecord(options: RunScriptOptions): Promise<Rec
       });
     }
 
-    // Set a base URL for relative navigation
-    await page.goto(baseUrl);
+    // Navigate to the first entry point as a starting position
+    await page.goto(entryPoints[0].baseUrl);
 
-    await executeScript(script, page, baseUrl);
+    await executeScript(script, page);
 
     // Enforce max duration
     const elapsed = (Date.now() - startTime) / 1000;
@@ -134,7 +135,7 @@ function buildMouseClickOverlayEvalScript(): string {
 })();`;
 }
 
-async function executeScript(script: string, page: Page, _baseUrl: string): Promise<void> {
+async function executeScript(script: string, page: Page): Promise<void> {
   const { writeFileSync, unlinkSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { pathToFileURL } = await import('node:url');

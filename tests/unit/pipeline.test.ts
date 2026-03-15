@@ -62,7 +62,7 @@ describe('runPipeline', () => {
 
     const result = await runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
     });
 
@@ -81,11 +81,11 @@ describe('runPipeline', () => {
       { path: 'app/routes/home.tsx', changeType: 'modified', hunks: [], additions: 10, deletions: 2 },
     ]);
     vi.mocked(detectRoutes).mockReturnValue([
-      { file: 'app/routes/home.tsx', route: '/', changeType: 'modified' },
+      { file: 'app/routes/home.tsx', route: '/', entry: 'default', changeType: 'modified' },
     ]);
     vi.mocked(summarizeChanges).mockResolvedValue({
       changedFiles: ['app/routes/home.tsx'],
-      affectedRoutes: [{ file: 'app/routes/home.tsx', route: '/', changeType: 'modified' }],
+      affectedRoutes: [{ file: 'app/routes/home.tsx', route: '/', entry: 'default', changeType: 'modified' }],
       changeDescription: 'Updated home page',
       suggestedDemoFlow: 'Navigate to home',
     });
@@ -106,7 +106,7 @@ describe('runPipeline', () => {
 
     const result = await runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
     });
 
@@ -148,7 +148,7 @@ describe('runPipeline', () => {
 
     const result = await runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
     });
 
@@ -171,7 +171,7 @@ describe('runPipeline', () => {
 
     await expect(runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
     })).rejects.toThrow('ANTHROPIC_API_KEY');
   });
@@ -205,7 +205,7 @@ describe('runPipeline', () => {
 
     const result = await runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
       generalDemo: true,
     });
@@ -246,7 +246,7 @@ describe('runPipeline', () => {
 
     const result = await runPipeline({
       diff: 'diff...',
-      baseUrl: 'http://localhost:3000',
+      entryPoints: [{ name: 'default', baseUrl: 'http://localhost:3000' }],
       config: CONFIG,
     });
 

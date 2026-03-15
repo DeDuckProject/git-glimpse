@@ -26,6 +26,17 @@ export const AppConfigSchema = z.object({
   hint: z.string().optional(),
 });
 
+/** Named entry point — extends AppConfig with a required name. */
+export const EntryPointSchema = AppConfigSchema.extend({
+  name: z.string(),
+});
+
+/** A routeMap value can be a plain route string or an object with entry point + route. */
+export const RouteMapValueSchema = z.union([
+  z.string(),
+  z.object({ entry: z.string(), route: z.string() }),
+]);
+
 export const RecordingConfigSchema = z.object({
   viewport: z
     .object({
@@ -45,8 +56,8 @@ export const LLMConfigSchema = z.object({
 });
 
 export const GitGlimpseConfigSchema = z.object({
-  app: AppConfigSchema,
-  routeMap: z.record(z.string()).optional(),
+  app: z.union([AppConfigSchema, z.array(EntryPointSchema).min(1)]),
+  routeMap: z.record(RouteMapValueSchema).optional(),
   setup: z.string().optional(),
   recording: RecordingConfigSchema.optional(),
   llm: LLMConfigSchema.optional(),
@@ -54,6 +65,8 @@ export const GitGlimpseConfigSchema = z.object({
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
+export type EntryPoint = z.infer<typeof EntryPointSchema>;
+export type RouteMapValue = z.infer<typeof RouteMapValueSchema>;
 export type RecordingConfig = z.infer<typeof RecordingConfigSchema>;
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
 export type GitGlimpseConfig = z.infer<typeof GitGlimpseConfigSchema>;

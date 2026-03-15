@@ -53437,6 +53437,13 @@ var AppConfigSchema = external_exports.object({
   /** Extra context appended to every LLM prompt (e.g. auth instructions, app-specific notes). */
   hint: external_exports.string().optional()
 });
+var EntryPointSchema = AppConfigSchema.extend({
+  name: external_exports.string()
+});
+var RouteMapValueSchema = external_exports.union([
+  external_exports.string(),
+  external_exports.object({ entry: external_exports.string(), route: external_exports.string() })
+]);
 var RecordingConfigSchema = external_exports.object({
   viewport: external_exports.object({
     width: external_exports.number().default(1280),
@@ -53452,8 +53459,8 @@ var LLMConfigSchema = external_exports.object({
   model: external_exports.string().default("claude-sonnet-4-6")
 });
 var GitGlimpseConfigSchema = external_exports.object({
-  app: AppConfigSchema,
-  routeMap: external_exports.record(external_exports.string()).optional(),
+  app: external_exports.union([AppConfigSchema, external_exports.array(EntryPointSchema).min(1)]),
+  routeMap: external_exports.record(RouteMapValueSchema).optional(),
   setup: external_exports.string().optional(),
   recording: RecordingConfigSchema.optional(),
   llm: LLMConfigSchema.optional(),

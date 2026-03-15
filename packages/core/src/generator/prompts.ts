@@ -1,7 +1,8 @@
 import type { RouteMapping } from '../analyzer/route-detector.js';
+import type { EntryPointUrl } from '../pipeline.js';
 
 export interface ScriptPromptOptions {
-  baseUrl: string;
+  entryPoints: EntryPointUrl[];
   diff: string;
   routes: RouteMapping[];
   demoFlow: string;
@@ -10,11 +11,35 @@ export interface ScriptPromptOptions {
   hint?: string;
 }
 
+function formatEntryPoints(entryPoints: EntryPointUrl[]): string {
+  if (entryPoints.length === 1) {
+    return `- Base URL: ${entryPoints[0].baseUrl}`;
+  }
+  return `- Entry points:\n` +
+    entryPoints.map((ep) => `  - ${ep.name}: ${ep.baseUrl}`).join('\n');
+}
+
+function formatRouteList(routes: RouteMapping[], entryPoints: EntryPointUrl[]): string {
+  if (routes.length === 0) return '  - / (home page)';
+  const multiEntry = entryPoints.length > 1;
+  return routes
+    .map((r) => {
+      const prefix = multiEntry ? `[${r.entry}] ` : '';
+      return `  - ${prefix}${r.route} (from ${r.file})`;
+    })
+    .join('\n');
+}
+
+function formatEntryPointNavInstructions(entryPoints: EntryPointUrl[]): string {
+  if (entryPoints.length === 1) return '';
+  return `\n## Multiple entry points
+- This app has multiple entry points at different URLs.
+- Use the correct entry point URL when navigating to each route. For example: \`await page.goto('${entryPoints[0].baseUrl}/some-route')\`
+- Each route in the "Affected routes" list is tagged with its entry point name in square brackets.\n`;
+}
+
 export function buildScriptGenerationPrompt(options: ScriptPromptOptions): string {
-  const routeList =
-    options.routes.length > 0
-      ? options.routes.map((r) => `  - ${r.route} (from ${r.file})`).join('\n')
-      : '  - / (home page)';
+  const routeList = formatRouteList(options.routes, options.entryPoints);
 
   const truncatedDiff = options.diff.length > 10000
     ? options.diff.slice(0, 10000) + '\n... (diff truncated)'
@@ -42,9 +67,9 @@ export function buildScriptGenerationPrompt(options: ScriptPromptOptions): strin
 - Move the mouse naturally between interactions: before clicking or hovering a target, briefly move to a nearby point first so the cursor doesn't teleport
 - Use \`await page.mouse.move(x, y)\` for a single intermediate waypoint — keep it simple, one waypoint is enough
 - Coordinates should be plausible screen positions relative to the viewport (${options.viewport.width}x${options.viewport.height})
-
+${formatEntryPointNavInstructions(options.entryPoints)}
 ## Context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
 - Affected routes:
 ${routeList}
@@ -65,7 +90,7 @@ export async function demo(page: Page): Promise<void> {
 }`;
 }
 
-export function buildGeneralDemoPrompt(options: Pick<ScriptPromptOptions, 'baseUrl' | 'maxDuration' | 'viewport' | 'hint'>): string {
+export function buildGeneralDemoPrompt(options: Pick<ScriptPromptOptions, 'entryPoints' | 'maxDuration' | 'viewport' | 'hint'>): string {
   return `You are a Playwright script generator. Generate a TypeScript Playwright script that records a general overview demo of a web app — as if showing it to someone for the first time.
 
 ## Goal
@@ -89,7 +114,7 @@ Produce a short, visually engaging tour that demonstrates the app is running and
 - Use plausible coordinates within the ${options.viewport.width}x${options.viewport.height} viewport
 
 ## Context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
 ${options.hint ? `\n## App-specific notes\n${options.hint}\n` : ''}
 ## Output format
@@ -123,7 +148,7 @@ ${originalScript}
 \`\`\`
 
 ## Original context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Affected routes:
 ${options.routes.map((r) => `  - ${r.route}`).join('\n')}
 

@@ -1,10 +1,10 @@
-import type { GitGlimpseConfig } from '../../core/src/config/schema.js';
+import type { GitGlimpseConfig, AppConfig, ResolvedEntryPoint, EntryPointUrl } from '@git-glimpse/core';
 
-export function resolveBaseUrl(
-  config: GitGlimpseConfig,
+function resolveAppUrl(
+  app: AppConfig,
   previewUrlOverride?: string
 ): { url: string; error?: never } | { url?: never; error: string } {
-  const previewUrl = previewUrlOverride ?? config.app.previewUrl;
+  const previewUrl = previewUrlOverride ?? app.previewUrl;
   if (previewUrl) {
     const resolved = process.env[previewUrl];
     if (resolved === undefined) {
@@ -12,7 +12,7 @@ export function resolveBaseUrl(
       if (previewUrl.startsWith('http')) return { url: previewUrl };
       return {
         error:
-          `app.previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. ` +
+          `previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. ` +
           `Set it to a full URL (e.g. "https://my-preview.vercel.app") or an env var name that is available in this workflow job.`,
       };
     }
@@ -23,9 +23,38 @@ export function resolveBaseUrl(
     }
     return { url: resolved };
   }
-  if (config.app.readyWhen?.url) {
-    const u = new URL(config.app.readyWhen.url);
+  if (app.readyWhen?.url) {
+    const u = new URL(app.readyWhen.url);
     return { url: u.origin };
   }
   return { url: 'http://localhost:3000' };
+}
+
+/** Resolve base URL for a single-app config (backward compat). */
+export function resolveBaseUrl(
+  config: GitGlimpseConfig,
+  previewUrlOverride?: string
+): { url: string; error?: never } | { url?: never; error: string } {
+  const app = Array.isArray(config.app) ? config.app[0] : config.app;
+  return resolveAppUrl(app, previewUrlOverride);
+}
+
+/** Resolve base URLs for all entry points. */
+export function resolveEntryPointUrls(
+  entryPoints: ResolvedEntryPoint[],
+  previewUrlOverride?: string,
+): { entryPoints: EntryPointUrl[]; error?: never } | { entryPoints?: never; error: string } {
+  const result: EntryPointUrl[] = [];
+
+  for (const ep of entryPoints) {
+    // Only apply the override to the first/default entry point
+    const override = result.length === 0 ? previewUrlOverride : undefined;
+    const resolved = resolveAppUrl(ep, override);
+    if (resolved.error) {
+      return { error: `Entry point "${ep.name}": ${resolved.error}` };
+    }
+    result.push({ name: ep.name, baseUrl: resolved.url });
+  }
+
+  return { entryPoints: result };
 }

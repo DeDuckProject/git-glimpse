@@ -1,15 +1,17 @@
 import { minimatch } from 'minimatch';
 import type { ParsedDiff } from './diff-parser.js';
+import type { NormalizedRouteMap } from '../config/normalize.js';
 
 export interface RouteMapping {
   file: string;
   route: string;
+  entry: string;
   changeType: 'added' | 'modified' | 'deleted';
 }
 
 export interface RouteDetectionOptions {
-  routeMap?: Record<string, string>;
-  baseUrl: string;
+  routeMap?: NormalizedRouteMap;
+  defaultEntry: string;
 }
 
 export function detectRoutes(
@@ -23,36 +25,44 @@ export function detectRoutes(
     if (file.changeType === 'deleted') continue;
 
     const changeType = file.changeType === 'added' ? 'added' : 'modified';
-    const route = resolveRoute(file.path, options);
+    const resolved = resolveRoute(file.path, options);
 
-    if (route && !seen.has(route)) {
-      seen.add(route);
-      mappings.push({ file: file.path, route, changeType });
+    if (resolved) {
+      const key = `${resolved.entry}:${resolved.route}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mappings.push({ file: file.path, route: resolved.route, entry: resolved.entry, changeType });
+      }
     }
   }
 
   return mappings;
 }
 
-function resolveRoute(filePath: string, options: RouteDetectionOptions): string | null {
+interface ResolvedRoute {
+  entry: string;
+  route: string;
+}
+
+function resolveRoute(filePath: string, options: RouteDetectionOptions): ResolvedRoute | null {
   // 1. Explicit routeMap (supports glob patterns)
   if (options.routeMap) {
-    for (const [pattern, route] of Object.entries(options.routeMap)) {
+    for (const [pattern, mapping] of Object.entries(options.routeMap)) {
       if (minimatch(filePath, pattern) || filePath === pattern || filePath.startsWith(pattern)) {
-        return route;
+        return { entry: mapping.entry, route: mapping.route };
       }
     }
   }
 
-  // 2. Framework convention detection
+  // 2. Framework convention detection (defaults to the first entry point)
   const remixRoute = detectRemixRoute(filePath);
-  if (remixRoute) return remixRoute;
+  if (remixRoute) return { entry: options.defaultEntry, route: remixRoute };
 
   const nextRoute = detectNextjsRoute(filePath);
-  if (nextRoute) return nextRoute;
+  if (nextRoute) return { entry: options.defaultEntry, route: nextRoute };
 
   const sveltekitRoute = detectSvelteKitRoute(filePath);
-  if (sveltekitRoute) return sveltekitRoute;
+  if (sveltekitRoute) return { entry: options.defaultEntry, route: sveltekitRoute };
 
   return null;
 }

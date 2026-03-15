@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ChangeAnalysis } from '../analyzer/change-summarizer.js';
 import type { GitGlimpseConfig } from '../config/schema.js';
+import type { EntryPointUrl } from '../pipeline.js';
 import { buildScriptGenerationPrompt, buildGeneralDemoPrompt, buildRetryPrompt, type ScriptPromptOptions } from './prompts.js';
 import { validateScript } from './validator.js';
 
@@ -12,25 +13,36 @@ export interface ScriptGenerationResult {
   errors: string[];
 }
 
+function collectHints(config: GitGlimpseConfig): string | undefined {
+  if (Array.isArray(config.app)) {
+    const hints = config.app
+      .filter((ep) => ep.hint)
+      .map((ep) => `[${ep.name}] ${ep.hint}`);
+    return hints.length > 0 ? hints.join('\n') : undefined;
+  }
+  return config.app.hint;
+}
+
 export async function generateDemoScript(
   client: Anthropic,
   analysis: ChangeAnalysis,
   rawDiff: string,
-  baseUrl: string,
+  entryPoints: EntryPointUrl[],
   config: GitGlimpseConfig,
   generalDemo = false
 ): Promise<ScriptGenerationResult> {
   const recording = config.recording ?? { viewport: { width: 1280, height: 720 }, maxDuration: 30, format: 'gif' as const, deviceScaleFactor: 2 };
   const llm = config.llm ?? { provider: 'anthropic' as const, model: 'claude-sonnet-4-6' };
+  const hint = collectHints(config);
 
   const promptOptions: ScriptPromptOptions = {
-    baseUrl,
+    entryPoints,
     diff: rawDiff,
     routes: analysis.affectedRoutes,
     demoFlow: analysis.suggestedDemoFlow,
     maxDuration: recording.maxDuration,
     viewport: recording.viewport,
-    hint: config.app.hint,
+    hint,
   };
 
   const errors: string[] = [];
@@ -40,7 +52,7 @@ export async function generateDemoScript(
     const prompt =
       attempt === 1
         ? (generalDemo
-            ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport, hint: config.app.hint })
+            ? buildGeneralDemoPrompt({ entryPoints, maxDuration: recording.maxDuration, viewport: recording.viewport, hint })
             : buildScriptGenerationPrompt(promptOptions))
         : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? '', '', promptOptions);
 

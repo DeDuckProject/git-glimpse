@@ -60817,12 +60817,12 @@ var require_dist_node14 = __commonJS({
       Octokit: () => Octokit2
     });
     module2.exports = __toCommonJS(index_exports);
-    var import_core4 = require_dist_node8();
+    var import_core5 = require_dist_node8();
     var import_plugin_request_log = require_dist_node11();
     var import_plugin_paginate_rest = require_dist_node12();
     var import_plugin_rest_endpoint_methods = require_dist_node13();
     var VERSION2 = "20.1.2";
-    var Octokit2 = import_core4.Octokit.plugin(
+    var Octokit2 = import_core5.Octokit.plugin(
       import_plugin_request_log.requestLog,
       import_plugin_rest_endpoint_methods.legacyRestEndpointMethods,
       import_plugin_paginate_rest.paginateRest
@@ -65223,31 +65223,34 @@ function detectRoutes(diff, options) {
     if (file.changeType === "deleted")
       continue;
     const changeType = file.changeType === "added" ? "added" : "modified";
-    const route = resolveRoute(file.path, options);
-    if (route && !seen.has(route)) {
-      seen.add(route);
-      mappings.push({ file: file.path, route, changeType });
+    const resolved = resolveRoute(file.path, options);
+    if (resolved) {
+      const key = `${resolved.entry}:${resolved.route}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mappings.push({ file: file.path, route: resolved.route, entry: resolved.entry, changeType });
+      }
     }
   }
   return mappings;
 }
 function resolveRoute(filePath, options) {
   if (options.routeMap) {
-    for (const [pattern, route] of Object.entries(options.routeMap)) {
+    for (const [pattern, mapping] of Object.entries(options.routeMap)) {
       if (minimatch(filePath, pattern) || filePath === pattern || filePath.startsWith(pattern)) {
-        return route;
+        return { entry: mapping.entry, route: mapping.route };
       }
     }
   }
   const remixRoute = detectRemixRoute(filePath);
   if (remixRoute)
-    return remixRoute;
+    return { entry: options.defaultEntry, route: remixRoute };
   const nextRoute = detectNextjsRoute(filePath);
   if (nextRoute)
-    return nextRoute;
+    return { entry: options.defaultEntry, route: nextRoute };
   const sveltekitRoute = detectSvelteKitRoute(filePath);
   if (sveltekitRoute)
-    return sveltekitRoute;
+    return { entry: options.defaultEntry, route: sveltekitRoute };
   return null;
 }
 function detectRemixRoute(filePath) {
@@ -65308,7 +65311,7 @@ async function summarizeChanges(client, diff, routes, model) {
   };
 }
 function buildSummaryPrompt(diff, routes) {
-  const routeList = routes.length > 0 ? routes.map((r2) => `  - ${r2.file} \u2192 ${r2.route}`).join("\n") : "  (no routes detected automatically)";
+  const routeList = routes.length > 0 ? routes.map((r2) => `  - ${r2.file} \u2192 [${r2.entry}] ${r2.route}`).join("\n") : "  (no routes detected automatically)";
   return `Analyze this code diff and provide a brief summary of the UI changes for a demo video.
 
 Affected routes:
@@ -65349,8 +65352,34 @@ function truncateDiff(diff, maxChars) {
 }
 
 // ../core/dist/generator/prompts.js
+function formatEntryPoints(entryPoints) {
+  if (entryPoints.length === 1) {
+    return `- Base URL: ${entryPoints[0].baseUrl}`;
+  }
+  return `- Entry points:
+` + entryPoints.map((ep) => `  - ${ep.name}: ${ep.baseUrl}`).join("\n");
+}
+function formatRouteList(routes, entryPoints) {
+  if (routes.length === 0)
+    return "  - / (home page)";
+  const multiEntry = entryPoints.length > 1;
+  return routes.map((r2) => {
+    const prefix = multiEntry ? `[${r2.entry}] ` : "";
+    return `  - ${prefix}${r2.route} (from ${r2.file})`;
+  }).join("\n");
+}
+function formatEntryPointNavInstructions(entryPoints) {
+  if (entryPoints.length === 1)
+    return "";
+  return `
+## Multiple entry points
+- This app has multiple entry points at different URLs.
+- Use the correct entry point URL when navigating to each route. For example: \`await page.goto('${entryPoints[0].baseUrl}/some-route')\`
+- Each route in the "Affected routes" list is tagged with its entry point name in square brackets.
+`;
+}
 function buildScriptGenerationPrompt(options) {
-  const routeList = options.routes.length > 0 ? options.routes.map((r2) => `  - ${r2.route} (from ${r2.file})`).join("\n") : "  - / (home page)";
+  const routeList = formatRouteList(options.routes, options.entryPoints);
   const truncatedDiff = options.diff.length > 1e4 ? options.diff.slice(0, 1e4) + "\n... (diff truncated)" : options.diff;
   return `You are a Playwright script generator. Given a code diff, generate a TypeScript Playwright script that visually demonstrates the UI changes.
 
@@ -65374,9 +65403,9 @@ function buildScriptGenerationPrompt(options) {
 - Move the mouse naturally between interactions: before clicking or hovering a target, briefly move to a nearby point first so the cursor doesn't teleport
 - Use \`await page.mouse.move(x, y)\` for a single intermediate waypoint \u2014 keep it simple, one waypoint is enough
 - Coordinates should be plausible screen positions relative to the viewport (${options.viewport.width}x${options.viewport.height})
-
+${formatEntryPointNavInstructions(options.entryPoints)}
 ## Context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
 - Affected routes:
 ${routeList}
@@ -65423,7 +65452,7 @@ Produce a short, visually engaging tour that demonstrates the app is running and
 - Use plausible coordinates within the ${options.viewport.width}x${options.viewport.height} viewport
 
 ## Context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Viewport: ${options.viewport.width}x${options.viewport.height}
 ${options.hint ? `
 ## App-specific notes
@@ -65454,7 +65483,7 @@ ${originalScript}
 \`\`\`
 
 ## Original context
-- Base URL: ${options.baseUrl}
+${formatEntryPoints(options.entryPoints)}
 - Affected routes:
 ${options.routes.map((r2) => `  - ${r2.route}`).join("\n")}
 
@@ -65483,22 +65512,30 @@ function stripMarkdownFences(script) {
 
 // ../core/dist/generator/script-generator.js
 var MAX_RETRIES = 2;
-async function generateDemoScript(client, analysis, rawDiff, baseUrl, config, generalDemo = false) {
+function collectHints(config) {
+  if (Array.isArray(config.app)) {
+    const hints = config.app.filter((ep) => ep.hint).map((ep) => `[${ep.name}] ${ep.hint}`);
+    return hints.length > 0 ? hints.join("\n") : void 0;
+  }
+  return config.app.hint;
+}
+async function generateDemoScript(client, analysis, rawDiff, entryPoints, config, generalDemo = false) {
   const recording = config.recording ?? { viewport: { width: 1280, height: 720 }, maxDuration: 30, format: "gif", deviceScaleFactor: 2 };
   const llm = config.llm ?? { provider: "anthropic", model: "claude-sonnet-4-6" };
+  const hint = collectHints(config);
   const promptOptions = {
-    baseUrl,
+    entryPoints,
     diff: rawDiff,
     routes: analysis.affectedRoutes,
     demoFlow: analysis.suggestedDemoFlow,
     maxDuration: recording.maxDuration,
     viewport: recording.viewport,
-    hint: config.app.hint
+    hint
   };
   const errors = [];
   let lastScript = "";
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
-    const prompt = attempt === 1 ? generalDemo ? buildGeneralDemoPrompt({ baseUrl, maxDuration: recording.maxDuration, viewport: recording.viewport, hint: config.app.hint }) : buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
+    const prompt = attempt === 1 ? generalDemo ? buildGeneralDemoPrompt({ entryPoints, maxDuration: recording.maxDuration, viewport: recording.viewport, hint }) : buildScriptGenerationPrompt(promptOptions) : buildRetryPrompt(lastScript, errors[errors.length - 1] ?? "", "", promptOptions);
     const response = await client.messages.create({
       model: llm.model,
       max_tokens: 4096,
@@ -65572,7 +65609,7 @@ async function ensureChromium(installDir) {
 
 // ../core/dist/recorder/playwright-runner.js
 async function runScriptAndRecord(options) {
-  const { script, baseUrl, recording, outputDir } = options;
+  const { script, entryPoints, recording, outputDir } = options;
   if (!(0, import_node_fs3.existsSync)(outputDir)) {
     (0, import_node_fs3.mkdirSync)(outputDir, { recursive: true });
   }
@@ -65588,8 +65625,8 @@ async function runScriptAndRecord(options) {
         });
       });
     }
-    await page.goto(baseUrl);
-    await executeScript(script, page, baseUrl);
+    await page.goto(entryPoints[0].baseUrl);
+    await executeScript(script, page);
     const elapsed = (Date.now() - startTime) / 1e3;
     if (elapsed > recording.maxDuration) {
       console.warn(`Demo exceeded max duration (${elapsed.toFixed(1)}s > ${recording.maxDuration}s)`);
@@ -65667,7 +65704,7 @@ function buildMouseClickOverlayEvalScript() {
   });
 })();`;
 }
-async function executeScript(script, page, _baseUrl) {
+async function executeScript(script, page) {
   const { writeFileSync: writeFileSync2, unlinkSync: unlinkSync2 } = await import("node:fs");
   const { tmpdir: tmpdir2 } = await import("node:os");
   const { pathToFileURL: pathToFileURL2 } = await import("node:url");
@@ -65827,10 +65864,12 @@ function scanForFfmpeg(cacheDir) {
 // ../core/dist/recorder/fallback.js
 var import_node_fs5 = require("node:fs");
 var import_node_path4 = require("node:path");
-async function takeScreenshots(baseUrl, routes, recording, outputDir) {
+async function takeScreenshots(entryPoints, routes, recording, outputDir) {
   if (!(0, import_node_fs5.existsSync)(outputDir)) {
     (0, import_node_fs5.mkdirSync)(outputDir, { recursive: true });
   }
+  const urlMap = new Map(entryPoints.map((ep) => [ep.name, ep.baseUrl]));
+  const defaultBaseUrl = entryPoints[0].baseUrl;
   const { chromium } = await ensurePlaywright();
   const browser = await chromium.launch({ headless: true });
   const screenshots = [];
@@ -65840,8 +65879,9 @@ async function takeScreenshots(baseUrl, routes, recording, outputDir) {
       deviceScaleFactor: recording.deviceScaleFactor
     });
     const page = await context2.newPage();
-    const targetRoutes = routes.length > 0 ? routes : [{ file: "", route: "/", changeType: "modified" }];
+    const targetRoutes = routes.length > 0 ? routes : [{ file: "", route: "/", entry: entryPoints[0].name, changeType: "modified" }];
     for (const route of targetRoutes) {
+      const baseUrl = urlMap.get(route.entry) ?? defaultBaseUrl;
       const url = baseUrl + route.route;
       await page.goto(url);
       await page.waitForLoadState("networkidle");
@@ -65860,19 +65900,46 @@ function sanitizeRoute(route) {
   return route.replace(/\//g, "_").replace(/[^a-zA-Z0-9_-]/g, "") || "home";
 }
 
+// ../core/dist/config/normalize.js
+function isEntryPointArray(app) {
+  return Array.isArray(app);
+}
+function normalizeConfig(config) {
+  let entryPoints;
+  if (isEntryPointArray(config.app)) {
+    entryPoints = config.app.map((ep) => ({ ...ep }));
+  } else {
+    entryPoints = [{ name: "default", ...config.app }];
+  }
+  const defaultEntry = entryPoints[0].name;
+  const routeMap = {};
+  if (config.routeMap) {
+    for (const [pattern, value] of Object.entries(config.routeMap)) {
+      if (typeof value === "string") {
+        routeMap[pattern] = { entry: defaultEntry, route: value };
+      } else {
+        routeMap[pattern] = { entry: value.entry, route: value.route };
+      }
+    }
+  }
+  return {
+    entryPoints,
+    routeMap,
+    setup: config.setup,
+    recording: config.recording,
+    llm: config.llm,
+    trigger: config.trigger
+  };
+}
+
 // ../core/dist/pipeline.js
 async function runPipeline(options) {
-  const { diff, baseUrl, config, generalDemo = false } = options;
+  const { diff, entryPoints, config, generalDemo = false } = options;
   const outputDir = options.outputDir ?? "./recordings";
   const errors = [];
-  const recording = config.recording ?? {
-    viewport: { width: 1280, height: 720 },
-    maxDuration: 30,
-    format: "gif",
-    deviceScaleFactor: 2,
-    showMouseClicks: true
-  };
-  const llm = config.llm ?? { provider: "anthropic", model: "claude-sonnet-4-6" };
+  const normalized = normalizeConfig(config);
+  const recording = normalized.recording;
+  const llm = normalized.llm;
   const parsedDiff = parseDiff(diff);
   if (!generalDemo) {
     const uiFiles = filterUIFiles(parsedDiff.files, config.trigger);
@@ -65892,20 +65959,20 @@ async function runPipeline(options) {
     }
   }
   const routes = detectRoutes(parsedDiff, {
-    routeMap: config.routeMap,
-    baseUrl
+    routeMap: normalized.routeMap,
+    defaultEntry: entryPoints[0].name
   });
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (!apiKey)
     throw new Error("ANTHROPIC_API_KEY environment variable is required");
   const client = new sdk_default({ apiKey });
   const analysis = await summarizeChanges(client, parsedDiff, routes, llm.model);
-  const { script, attempts, errors: genErrors } = await generateDemoScript(client, analysis, diff, baseUrl, config, generalDemo);
+  const { script, attempts, errors: genErrors } = await generateDemoScript(client, analysis, diff, entryPoints, config, generalDemo);
   errors.push(...genErrors);
   try {
     const recordingResult = await runScriptAndRecord({
       script,
-      baseUrl,
+      entryPoints,
       recording,
       outputDir
     });
@@ -65931,7 +65998,7 @@ async function runPipeline(options) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     errors.push(`Recording failed: ${message}`);
-    const fallback = await takeScreenshots(baseUrl, routes, recording, outputDir);
+    const fallback = await takeScreenshots(entryPoints, routes, recording, outputDir);
     return {
       success: false,
       screenshots: fallback.screenshots,
@@ -70010,6 +70077,13 @@ var AppConfigSchema = external_exports.object({
   /** Extra context appended to every LLM prompt (e.g. auth instructions, app-specific notes). */
   hint: external_exports.string().optional()
 });
+var EntryPointSchema = AppConfigSchema.extend({
+  name: external_exports.string()
+});
+var RouteMapValueSchema = external_exports.union([
+  external_exports.string(),
+  external_exports.object({ entry: external_exports.string(), route: external_exports.string() })
+]);
 var RecordingConfigSchema = external_exports.object({
   viewport: external_exports.object({
     width: external_exports.number().default(1280),
@@ -70025,8 +70099,8 @@ var LLMConfigSchema = external_exports.object({
   model: external_exports.string().default("claude-sonnet-4-6")
 });
 var GitGlimpseConfigSchema = external_exports.object({
-  app: AppConfigSchema,
-  routeMap: external_exports.record(external_exports.string()).optional(),
+  app: external_exports.union([AppConfigSchema, external_exports.array(EntryPointSchema).min(1)]),
+  routeMap: external_exports.record(RouteMapValueSchema).optional(),
   setup: external_exports.string().optional(),
   recording: RecordingConfigSchema.optional(),
   llm: LLMConfigSchema.optional(),
@@ -70321,14 +70395,14 @@ function evaluateTrigger(opts) {
 }
 
 // src/resolve-base-url.ts
-function resolveBaseUrl(config, previewUrlOverride) {
-  const previewUrl = previewUrlOverride ?? config.app.previewUrl;
+function resolveAppUrl(app, previewUrlOverride) {
+  const previewUrl = previewUrlOverride ?? app.previewUrl;
   if (previewUrl) {
     const resolved = process.env[previewUrl];
     if (resolved === void 0) {
       if (previewUrl.startsWith("http")) return { url: previewUrl };
       return {
-        error: `app.previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. Set it to a full URL (e.g. "https://my-preview.vercel.app") or an env var name that is available in this workflow job.`
+        error: `previewUrl is set to "${previewUrl}" but it doesn't look like a URL and no env var with that name was found. Set it to a full URL (e.g. "https://my-preview.vercel.app") or an env var name that is available in this workflow job.`
       };
     }
     if (!resolved.startsWith("http")) {
@@ -70338,11 +70412,23 @@ function resolveBaseUrl(config, previewUrlOverride) {
     }
     return { url: resolved };
   }
-  if (config.app.readyWhen?.url) {
-    const u2 = new URL(config.app.readyWhen.url);
+  if (app.readyWhen?.url) {
+    const u2 = new URL(app.readyWhen.url);
     return { url: u2.origin };
   }
   return { url: "http://localhost:3000" };
+}
+function resolveEntryPointUrls(entryPoints, previewUrlOverride) {
+  const result = [];
+  for (const ep of entryPoints) {
+    const override = result.length === 0 ? previewUrlOverride : void 0;
+    const resolved = resolveAppUrl(ep, override);
+    if (resolved.error) {
+      return { error: `Entry point "${ep.name}": ${resolved.error}` };
+    }
+    result.push({ name: ep.name, baseUrl: resolved.url });
+  }
+  return { entryPoints: result };
 }
 
 // src/api-key-check.ts
@@ -70397,11 +70483,18 @@ async function run() {
   const startCommandInput = core.getInput("start-command") || void 0;
   const triggerModeInput = core.getInput("trigger-mode") || void 0;
   let config = await loadConfig(configPath);
-  if (previewUrlInput) {
-    config = { ...config, app: { ...config.app, previewUrl: previewUrlInput } };
-  }
-  if (startCommandInput) {
-    config = { ...config, app: { ...config.app, startCommand: startCommandInput } };
+  if (previewUrlInput || startCommandInput) {
+    if (Array.isArray(config.app)) {
+      const first = { ...config.app[0] };
+      if (previewUrlInput) first.previewUrl = previewUrlInput;
+      if (startCommandInput) first.startCommand = startCommandInput;
+      config = { ...config, app: [first, ...config.app.slice(1)] };
+    } else {
+      const app = { ...config.app };
+      if (previewUrlInput) app.previewUrl = previewUrlInput;
+      if (startCommandInput) app.startCommand = startCommandInput;
+      config = { ...config, app };
+    }
   }
   if (triggerModeInput && ["auto", "on-demand", "smart"].includes(triggerModeInput)) {
     config = {
@@ -70482,24 +70575,37 @@ async function run() {
     core.setOutput("success", "false");
     return;
   }
-  const baseUrlResult = resolveBaseUrl(config, previewUrlInput);
-  if (!baseUrlResult.url) {
-    core.setFailed(baseUrlResult.error);
+  const normalized = normalizeConfig(config);
+  const urlResult = resolveEntryPointUrls(normalized.entryPoints, previewUrlInput);
+  if (urlResult.error) {
+    core.setFailed(urlResult.error);
     return;
   }
-  const baseUrl = baseUrlResult.url;
+  const entryPoints = urlResult.entryPoints;
+  core.info(`Entry points: ${entryPoints.map((ep) => `${ep.name}=${ep.baseUrl}`).join(", ")}`);
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
     const parts = config.setup.split(" ");
     (0, import_node_child_process3.execFileSync)(parts[0], parts.slice(1), { stdio: "inherit" });
   }
-  let appProcess = null;
-  if (config.app.startCommand && !config.app.previewUrl) {
-    appProcess = await startApp(config.app.startCommand, config.app.readyWhen?.url ?? baseUrl);
+  const appProcesses = [];
+  for (const ep of normalized.entryPoints) {
+    if (ep.startCommand && !ep.previewUrl) {
+      const resolved = entryPoints.find((r2) => r2.name === ep.name);
+      const readyUrl = ep.readyWhen?.url ?? resolved?.baseUrl ?? "http://localhost:3000";
+      const proc = await startApp(ep.name, ep.startCommand, readyUrl);
+      appProcesses.push(proc);
+    }
   }
   try {
     core.info("Running git-glimpse pipeline...");
-    const result = await runPipeline({ diff, baseUrl, outputDir: "./recordings", config, generalDemo: decision.generalDemo });
+    const result = await runPipeline({
+      diff,
+      entryPoints,
+      outputDir: "./recordings",
+      config,
+      generalDemo: decision.generalDemo
+    });
     if (result.errors.length > 0) {
       core.warning(`Pipeline completed with errors:
 ${result.errors.join("\n")}`);
@@ -70540,15 +70646,17 @@ ${result.errors.join("\n")}`);
     await addCommentReaction("confused");
     throw err;
   } finally {
-    appProcess?.kill();
+    for (const proc of appProcesses) {
+      proc.kill();
+    }
   }
 }
-async function startApp(startCommand, readyUrl) {
+async function startApp(name, startCommand, readyUrl) {
   const parts = startCommand.split(" ");
-  core.info(`Starting app: ${startCommand}`);
+  core.info(`Starting app "${name}": ${startCommand}`);
   const proc = (0, import_node_child_process3.spawn)(parts[0], parts.slice(1), { stdio: "inherit", shell: false });
   await waitForUrl(readyUrl, 3e4);
-  core.info("App is ready");
+  core.info(`App "${name}" is ready`);
   return proc;
 }
 async function waitForUrl(url, timeout) {

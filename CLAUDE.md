@@ -47,6 +47,9 @@ pnpm test           # all packages
 pnpm test --watch   # watch mode
 ```
 
+Features and bug fixes should include a unit test. Keep tests focused and avoid over-mocking —
+test the behaviour that matters, not implementation details.
+
 Integration tests require a running app. See `tests/integration/`.
 
 ## External-First Design Principle

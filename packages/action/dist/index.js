@@ -60835,7 +60835,7 @@ var require_dist_node14 = __commonJS({
 // src/index.ts
 var core = __toESM(require_core());
 var github = __toESM(require_github());
-var import_node_child_process2 = require("node:child_process");
+var import_node_child_process3 = require("node:child_process");
 
 // ../../node_modules/.pnpm/@anthropic-ai+sdk@0.24.3/node_modules/@anthropic-ai/sdk/error.mjs
 var error_exports = {};
@@ -65516,15 +65516,67 @@ async function generateDemoScript(client, analysis, rawDiff, baseUrl, config, ge
 }
 
 // ../core/dist/recorder/playwright-runner.js
+var import_node_fs3 = require("node:fs");
+var import_node_path2 = require("node:path");
+
+// ../core/dist/recorder/ensure-playwright.js
 var import_node_fs2 = require("node:fs");
 var import_node_path = require("node:path");
+var import_node_os = require("node:os");
+var import_node_child_process = require("node:child_process");
 var import_node_module = require("node:module");
+async function ensurePlaywright() {
+  try {
+    const req2 = (0, import_node_module.createRequire)((0, import_node_path.join)(process.cwd(), "package.json"));
+    return req2("@playwright/test");
+  } catch {
+  }
+  const installDir = resolveInstallDir();
+  const playwrightPkgPath = (0, import_node_path.join)(installDir, "node_modules", "@playwright", "test", "package.json");
+  if (!(0, import_node_fs2.existsSync)(playwrightPkgPath)) {
+    console.info("[git-glimpse] @playwright/test not found in consumer project. Installing...");
+    console.info(`[git-glimpse] Install directory: ${installDir}`);
+    (0, import_node_child_process.execFileSync)("npm", ["install", "--prefix", installDir, "--no-save", "@playwright/test"], {
+      stdio: "inherit"
+    });
+    console.info("[git-glimpse] @playwright/test installed successfully.");
+  }
+  const req = (0, import_node_module.createRequire)((0, import_node_path.join)(installDir, "package.json"));
+  const pw = req("@playwright/test");
+  await ensureChromium(installDir);
+  return pw;
+}
+function resolveInstallDir() {
+  try {
+    const dir = (0, import_node_path.join)((0, import_node_os.homedir)(), ".cache", "git-glimpse", "playwright");
+    return dir;
+  } catch {
+    return (0, import_node_path.join)((0, import_node_os.tmpdir)(), "git-glimpse-playwright");
+  }
+}
+async function ensureChromium(installDir) {
+  const msPlaywrightCache = (0, import_node_path.join)((0, import_node_os.homedir)(), ".cache", "ms-playwright");
+  if ((0, import_node_fs2.existsSync)(msPlaywrightCache)) {
+    const entries = await import("node:fs").then((fs2) => fs2.readdirSync(msPlaywrightCache).filter((e2) => e2.startsWith("chromium")));
+    if (entries.length > 0) {
+      return;
+    }
+  }
+  console.info("[git-glimpse] Installing Playwright Chromium browser...");
+  const playwrightCli = (0, import_node_path.join)(installDir, "node_modules", ".bin", "playwright");
+  (0, import_node_child_process.execFileSync)(playwrightCli, ["install", "chromium", "--with-deps"], {
+    stdio: "inherit"
+  });
+  console.info("[git-glimpse] Chromium installed.");
+}
+
+// ../core/dist/recorder/playwright-runner.js
 async function runScriptAndRecord(options) {
   const { script, baseUrl, recording, outputDir } = options;
-  if (!(0, import_node_fs2.existsSync)(outputDir)) {
-    (0, import_node_fs2.mkdirSync)(outputDir, { recursive: true });
+  if (!(0, import_node_fs3.existsSync)(outputDir)) {
+    (0, import_node_fs3.mkdirSync)(outputDir, { recursive: true });
   }
-  const { chromium } = (0, import_node_module.createRequire)((0, import_node_path.join)(process.cwd(), "package.json"))("@playwright/test");
+  const { chromium } = await ensurePlaywright();
   const browser = await chromium.launch({ headless: true });
   const startTime = Date.now();
   try {
@@ -65617,11 +65669,11 @@ function buildMouseClickOverlayEvalScript() {
 }
 async function executeScript(script, page, _baseUrl) {
   const { writeFileSync: writeFileSync2, unlinkSync: unlinkSync2 } = await import("node:fs");
-  const { tmpdir } = await import("node:os");
+  const { tmpdir: tmpdir2 } = await import("node:os");
   const { pathToFileURL: pathToFileURL2 } = await import("node:url");
   const { transform } = await Promise.resolve().then(() => __toESM(require_dist2(), 1));
   const { code } = transform(script, { transforms: ["typescript"] });
-  const tmpPath = (0, import_node_path.join)(tmpdir(), `git-glimpse-script-${Date.now()}.mjs`);
+  const tmpPath = (0, import_node_path2.join)(tmpdir2(), `git-glimpse-script-${Date.now()}.mjs`);
   writeFileSync2(tmpPath, code, "utf-8");
   try {
     const mod = await import(pathToFileURL2(tmpPath).href);
@@ -65635,23 +65687,23 @@ async function executeScript(script, page, _baseUrl) {
 }
 async function resolveVideoPath(outputDir) {
   const { readdirSync: readdirSync2, statSync: statSync3 } = await import("node:fs");
-  const files = readdirSync2(outputDir).filter((f2) => f2.endsWith(".webm")).map((f2) => ({ name: f2, mtime: statSync3((0, import_node_path.join)(outputDir, f2)).mtimeMs })).sort((a2, b2) => b2.mtime - a2.mtime);
+  const files = readdirSync2(outputDir).filter((f2) => f2.endsWith(".webm")).map((f2) => ({ name: f2, mtime: statSync3((0, import_node_path2.join)(outputDir, f2)).mtimeMs })).sort((a2, b2) => b2.mtime - a2.mtime);
   const latest = files[0];
   if (!latest)
     throw new Error(`No video file found in ${outputDir}`);
-  return (0, import_node_path.join)(outputDir, latest.name);
+  return (0, import_node_path2.join)(outputDir, latest.name);
 }
 
 // ../core/dist/recorder/post-processor.js
-var import_node_child_process = require("node:child_process");
-var import_node_fs3 = require("node:fs");
-var import_node_path2 = require("node:path");
-var import_node_os = __toESM(require("node:os"), 1);
+var import_node_child_process2 = require("node:child_process");
+var import_node_fs4 = require("node:fs");
+var import_node_path3 = require("node:path");
+var import_node_os2 = __toESM(require("node:os"), 1);
 async function postProcess(options) {
   const { inputPath, outputDir, format } = options;
   const ffmpegPath = resolveFfmpegPath();
-  const outputName = (0, import_node_path2.basename)(inputPath, ".webm") + "." + format;
-  const outputPath = (0, import_node_path2.join)(outputDir, outputName);
+  const outputName = (0, import_node_path3.basename)(inputPath, ".webm") + "." + format;
+  const outputPath = (0, import_node_path3.join)(outputDir, outputName);
   if (format === "gif") {
     await convertToGif(ffmpegPath, inputPath, outputPath, options.viewport);
   } else if (format === "mp4") {
@@ -65665,7 +65717,7 @@ async function postProcess(options) {
 async function convertToGif(ffmpegPath, input, output, viewport) {
   const targetWidth = Math.min(viewport.width / 2, 960);
   const palettePath = output.replace(".gif", "-palette.png");
-  (0, import_node_child_process.execFileSync)(ffmpegPath, [
+  (0, import_node_child_process2.execFileSync)(ffmpegPath, [
     "-i",
     input,
     "-vf",
@@ -65675,7 +65727,7 @@ async function convertToGif(ffmpegPath, input, output, viewport) {
     "-y",
     palettePath
   ]);
-  (0, import_node_child_process.execFileSync)(ffmpegPath, [
+  (0, import_node_child_process2.execFileSync)(ffmpegPath, [
     "-i",
     input,
     "-i",
@@ -65688,11 +65740,11 @@ async function convertToGif(ffmpegPath, input, output, viewport) {
     output
   ]);
   const { unlinkSync: unlinkSync2 } = await import("node:fs");
-  if ((0, import_node_fs3.existsSync)(palettePath))
+  if ((0, import_node_fs4.existsSync)(palettePath))
     unlinkSync2(palettePath);
 }
 async function convertToMp4(ffmpegPath, input, output) {
-  (0, import_node_child_process.execFileSync)(ffmpegPath, [
+  (0, import_node_child_process2.execFileSync)(ffmpegPath, [
     "-i",
     input,
     "-c:v",
@@ -65710,7 +65762,7 @@ async function convertToMp4(ffmpegPath, input, output) {
   ]);
 }
 async function trimWebm(ffmpegPath, input, output) {
-  (0, import_node_child_process.execFileSync)(ffmpegPath, [
+  (0, import_node_child_process2.execFileSync)(ffmpegPath, [
     "-i",
     input,
     "-c",
@@ -65726,7 +65778,7 @@ async function getFileSizeMB(filePath) {
 }
 function resolveFfmpegPath() {
   try {
-    (0, import_node_child_process.execFileSync)("ffmpeg", ["-version"], { stdio: "ignore" });
+    (0, import_node_child_process2.execFileSync)("ffmpeg", ["-version"], { stdio: "ignore" });
     return "ffmpeg";
   } catch {
   }
@@ -65742,45 +65794,44 @@ function findPlaywrightCacheDir() {
   const envPath = process.env["PLAYWRIGHT_BROWSERS_PATH"];
   if (envPath && envPath !== "0")
     return envPath;
-  const home = import_node_os.default.homedir();
+  const home = import_node_os2.default.homedir();
   if (process.platform === "linux") {
     const xdgCache = process.env["XDG_CACHE_HOME"];
-    return xdgCache ? (0, import_node_path2.join)(xdgCache, "ms-playwright") : (0, import_node_path2.join)(home, ".cache", "ms-playwright");
+    return xdgCache ? (0, import_node_path3.join)(xdgCache, "ms-playwright") : (0, import_node_path3.join)(home, ".cache", "ms-playwright");
   }
   if (process.platform === "darwin") {
-    return (0, import_node_path2.join)(home, "Library", "Caches", "ms-playwright");
+    return (0, import_node_path3.join)(home, "Library", "Caches", "ms-playwright");
   }
   if (process.platform === "win32") {
-    const localAppData = process.env["LOCALAPPDATA"] ?? (0, import_node_path2.join)(home, "AppData", "Local");
-    return (0, import_node_path2.join)(localAppData, "ms-playwright");
+    const localAppData = process.env["LOCALAPPDATA"] ?? (0, import_node_path3.join)(home, "AppData", "Local");
+    return (0, import_node_path3.join)(localAppData, "ms-playwright");
   }
   return null;
 }
 function scanForFfmpeg(cacheDir) {
-  if (!(0, import_node_fs3.existsSync)(cacheDir))
+  if (!(0, import_node_fs4.existsSync)(cacheDir))
     return null;
-  const entries = (0, import_node_fs3.readdirSync)(cacheDir);
+  const entries = (0, import_node_fs4.readdirSync)(cacheDir);
   const ffmpegDir = entries.find((e2) => e2.startsWith("ffmpeg"));
   if (!ffmpegDir)
     return null;
-  const dir = (0, import_node_path2.join)(cacheDir, ffmpegDir);
+  const dir = (0, import_node_path3.join)(cacheDir, ffmpegDir);
   for (const name of ["ffmpeg-linux", "ffmpeg-mac", "ffmpeg-win64.exe", "ffmpeg"]) {
-    const candidate = (0, import_node_path2.join)(dir, name);
-    if ((0, import_node_fs3.existsSync)(candidate))
+    const candidate = (0, import_node_path3.join)(dir, name);
+    if ((0, import_node_fs4.existsSync)(candidate))
       return candidate;
   }
   return null;
 }
 
 // ../core/dist/recorder/fallback.js
-var import_node_fs4 = require("node:fs");
-var import_node_path3 = require("node:path");
-var import_node_module2 = require("node:module");
+var import_node_fs5 = require("node:fs");
+var import_node_path4 = require("node:path");
 async function takeScreenshots(baseUrl, routes, recording, outputDir) {
-  if (!(0, import_node_fs4.existsSync)(outputDir)) {
-    (0, import_node_fs4.mkdirSync)(outputDir, { recursive: true });
+  if (!(0, import_node_fs5.existsSync)(outputDir)) {
+    (0, import_node_fs5.mkdirSync)(outputDir, { recursive: true });
   }
-  const { chromium } = (0, import_node_module2.createRequire)((0, import_node_path3.join)(process.cwd(), "package.json"))("@playwright/test");
+  const { chromium } = await ensurePlaywright();
   const browser = await chromium.launch({ headless: true });
   const screenshots = [];
   try {
@@ -65795,7 +65846,7 @@ async function takeScreenshots(baseUrl, routes, recording, outputDir) {
       await page.goto(url);
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(1e3);
-      const screenshotPath = (0, import_node_path3.join)(outputDir, `screenshot-${sanitizeRoute(route.route)}.png`);
+      const screenshotPath = (0, import_node_path4.join)(outputDir, `screenshot-${sanitizeRoute(route.route)}.png`);
       await page.screenshot({ path: screenshotPath, fullPage: false });
       screenshots.push(screenshotPath);
     }
@@ -65894,8 +65945,8 @@ async function runPipeline(options) {
 
 // ../core/dist/config/loader.js
 var import_node_url = require("node:url");
-var import_node_fs5 = require("node:fs");
-var import_node_path4 = require("node:path");
+var import_node_fs6 = require("node:fs");
+var import_node_path5 = require("node:path");
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js
 var external_exports = {};
@@ -70003,21 +70054,21 @@ var DEFAULT_TRIGGER = {
 
 // ../core/dist/config/loader.js
 async function importConfigFile(filePath) {
-  if ((0, import_node_path4.extname)(filePath) !== ".ts") {
+  if ((0, import_node_path5.extname)(filePath) !== ".ts") {
     const mod = await import((0, import_node_url.pathToFileURL)(filePath).href);
     return mod.default ?? mod;
   }
   const { transform } = await Promise.resolve().then(() => __toESM(require_dist2(), 1));
-  const source = (0, import_node_fs5.readFileSync)(filePath, "utf-8");
+  const source = (0, import_node_fs6.readFileSync)(filePath, "utf-8");
   const { code } = transform(source, { transforms: ["typescript"] });
-  const tmpFile = (0, import_node_path4.resolve)((0, import_node_path4.dirname)(filePath), `.git-glimpse-config-${Date.now()}.mjs`);
+  const tmpFile = (0, import_node_path5.resolve)((0, import_node_path5.dirname)(filePath), `.git-glimpse-config-${Date.now()}.mjs`);
   try {
-    (0, import_node_fs5.writeFileSync)(tmpFile, code);
+    (0, import_node_fs6.writeFileSync)(tmpFile, code);
     const mod = await import((0, import_node_url.pathToFileURL)(tmpFile).href);
     return mod.default ?? mod;
   } finally {
     try {
-      (0, import_node_fs5.unlinkSync)(tmpFile);
+      (0, import_node_fs6.unlinkSync)(tmpFile);
     } catch {
     }
   }
@@ -70025,8 +70076,8 @@ async function importConfigFile(filePath) {
 async function loadConfig(configPath) {
   const candidates = configPath ? [configPath] : ["git-glimpse.config.ts", "git-glimpse.config.js", "git-glimpse.config.mjs"];
   for (const candidate of candidates) {
-    const fullPath = (0, import_node_path4.resolve)(process.cwd(), candidate);
-    if ((0, import_node_fs5.existsSync)(fullPath)) {
+    const fullPath = (0, import_node_path5.resolve)(process.cwd(), candidate);
+    if ((0, import_node_fs6.existsSync)(fullPath)) {
       const raw = await importConfigFile(fullPath);
       return parseConfig(raw);
     }
@@ -70147,14 +70198,14 @@ ${script}
 }
 
 // ../core/dist/publisher/storage.js
-var import_node_fs6 = require("node:fs");
-var import_node_path5 = require("node:path");
+var import_node_fs7 = require("node:fs");
+var import_node_path6 = require("node:path");
 async function uploadToGitHubAssets(token, owner, repo, filePath) {
   const { Octokit: Octokit2 } = await Promise.resolve().then(() => __toESM(require_dist_node14(), 1));
   const octokit = new Octokit2({ auth: token });
-  const fileBuffer = (0, import_node_fs6.readFileSync)(filePath);
-  const fileName = (0, import_node_path5.basename)(filePath);
-  const size = (0, import_node_fs6.statSync)(filePath).size;
+  const fileBuffer = (0, import_node_fs7.readFileSync)(filePath);
+  const fileName = (0, import_node_path6.basename)(filePath);
+  const size = (0, import_node_fs7.statSync)(filePath).size;
   const release = await octokit.rest.repos.createRelease({
     owner,
     repo,
@@ -70314,7 +70365,7 @@ function checkApiKey(apiKey, shouldRun) {
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
     const chunks = [];
-    const proc = (0, import_node_child_process2.spawn)(cmd, args, { shell: false });
+    const proc = (0, import_node_child_process3.spawn)(cmd, args, { shell: false });
     proc.stdout.on("data", (chunk) => chunks.push(chunk));
     proc.stderr.on("data", (chunk) => chunks.push(chunk));
     proc.on("error", reject);
@@ -70440,7 +70491,7 @@ async function run() {
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
     const parts = config.setup.split(" ");
-    (0, import_node_child_process2.execFileSync)(parts[0], parts.slice(1), { stdio: "inherit" });
+    (0, import_node_child_process3.execFileSync)(parts[0], parts.slice(1), { stdio: "inherit" });
   }
   let appProcess = null;
   if (config.app.startCommand && !config.app.previewUrl) {
@@ -70495,7 +70546,7 @@ ${result.errors.join("\n")}`);
 async function startApp(startCommand, readyUrl) {
   const parts = startCommand.split(" ");
   core.info(`Starting app: ${startCommand}`);
-  const proc = (0, import_node_child_process2.spawn)(parts[0], parts.slice(1), { stdio: "inherit", shell: false });
+  const proc = (0, import_node_child_process3.spawn)(parts[0], parts.slice(1), { stdio: "inherit", shell: false });
   await waitForUrl(readyUrl, 3e4);
   core.info("App is ready");
   return proc;

@@ -32,6 +32,7 @@ PR opened/updated  (or /glimpse comment)
 > ```
 > Integrate git-glimpse into this repo: https://github.com/DeDuckProject/git-glimpse. Follow the README instructions.
 > ```
+> See [an example integration PR](https://github.com/DeDuckProject/epp-demo/pull/41) to know what to expect.
 
 ### 1. Add the workflow files
 

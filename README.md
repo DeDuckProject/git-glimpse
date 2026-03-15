@@ -28,6 +28,12 @@ PR opened/updated  (or /glimpse comment)
 
 ## Quick start
 
+> **One-prompt integration:** Paste this into your AI agent (Cursor, Copilot, Claude Code, etc.):
+> ```
+> Integrate git-glimpse into this repo: https://github.com/DeDuckProject/git-glimpse. Follow the README instructions.
+> ```
+> See [an example integration PR](https://github.com/DeDuckProject/epp-demo/pull/41) to know what to expect.
+
 ### 1. Add the workflow files
 
 Two files are recommended. The first is the main pipeline; the second gives instant 👀 feedback on `/glimpse` comments without adding noise to PR push checks.
@@ -139,6 +145,8 @@ export default {
   },
 } satisfies GitGlimpseConfig;
 ```
+
+> **Tip:** Keep the default `auto` mode for your first PR — it runs automatically so you'll see the demo right away. Once you've confirmed everything works, you can switch to `on-demand` if you prefer. Starting with `on-demand` means no demo on your first PR, so you won't know if the integration is working.
 
 ### 3. Add secrets
 

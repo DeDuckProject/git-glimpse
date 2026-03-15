@@ -527,6 +527,19 @@ See [CLAUDE.md](CLAUDE.md) for repo structure and contributor notes.
 
 ---
 
+## Diff truncation
+
+Large diffs are automatically truncated before being sent to the LLM to stay within reasonable token budgets:
+
+| Stage | Character limit | Purpose |
+|---|---|---|
+| Change summarizer | 8 000 chars | Analyzing what changed and suggesting a demo flow |
+| Script generator | 10 000 chars | Generating the Playwright interaction script |
+
+When a diff exceeds the limit, it is cut at the threshold and a `... (diff truncated)` marker is appended so the LLM knows the input is incomplete. In practice this means very large PRs may produce less accurate scripts — consider using `routeMap` or `app.hint` to give the LLM additional context when working with big diffs.
+
+---
+
 ## Known limitations
 
 - **Single entry point** — only one preview URL or start command per run is supported; multiple entry points are planned.

@@ -103,7 +103,7 @@ async function findExistingComment(
   return existing ? { id: existing.id } : null;
 }
 
-function buildCommentBody(options: CommentOptions): string {
+export function buildCommentBody(options: CommentOptions): string {
   const { analysis, recordingUrl, screenshots, script, rerunUrl } = options;
 
   const changedFilesList = analysis.changedFiles

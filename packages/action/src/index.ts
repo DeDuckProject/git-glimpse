@@ -14,6 +14,7 @@ import {
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
 import { resolveBaseUrl } from './resolve-base-url.js';
+import { checkApiKey } from './api-key-check.js';
 
 function streamCommand(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,6 +36,12 @@ async function run(): Promise<void> {
 
   if (!token) {
     core.setFailed('GITHUB_TOKEN is required');
+    return;
+  }
+
+  const apiKeyCheck = checkApiKey(process.env['ANTHROPIC_API_KEY'], true);
+  if (apiKeyCheck.action === 'fail') {
+    core.setFailed(apiKeyCheck.message);
     return;
   }
 

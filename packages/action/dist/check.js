@@ -19706,11 +19706,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issue)("echo", enabled ? "on" : "off");
     }
     exports2.setCommandEcho = setCommandEcho;
-    function setFailed(message) {
+    function setFailed2(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports2.setFailed = setFailed;
+    exports2.setFailed = setFailed2;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
@@ -53620,6 +53620,22 @@ function evaluateTrigger(opts) {
   };
 }
 
+// src/api-key-check.ts
+var REMEDIATION = "Add it to your workflow: env: ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}";
+function checkApiKey(apiKey, shouldRun) {
+  if (apiKey) return { action: "ok" };
+  if (shouldRun) {
+    return {
+      action: "fail",
+      message: `ANTHROPIC_API_KEY is required but not set. ${REMEDIATION}`
+    };
+  }
+  return {
+    action: "warn",
+    message: `ANTHROPIC_API_KEY is not set. The pipeline will fail if it runs. ${REMEDIATION}`
+  };
+}
+
 // src/check.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -53722,6 +53738,14 @@ async function check() {
     command
   });
   core.info(`Trigger decision: ${decision.shouldRun ? "RUN" : "SKIP"} \u2014 ${decision.reason}`);
+  const apiKeyCheck = checkApiKey(process.env["ANTHROPIC_API_KEY"], decision.shouldRun);
+  if (apiKeyCheck.action === "fail") {
+    core.setFailed(apiKeyCheck.message);
+    return;
+  }
+  if (apiKeyCheck.action === "warn") {
+    core.warning(apiKeyCheck.message);
+  }
   core.setOutput("should-run", String(decision.shouldRun));
 }
 check().catch((err) => {

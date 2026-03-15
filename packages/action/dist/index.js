@@ -70345,6 +70345,22 @@ function resolveBaseUrl(config, previewUrlOverride) {
   return { url: "http://localhost:3000" };
 }
 
+// src/api-key-check.ts
+var REMEDIATION = "Add it to your workflow: env: ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}";
+function checkApiKey(apiKey, shouldRun) {
+  if (apiKey) return { action: "ok" };
+  if (shouldRun) {
+    return {
+      action: "fail",
+      message: `ANTHROPIC_API_KEY is required but not set. ${REMEDIATION}`
+    };
+  }
+  return {
+    action: "warn",
+    message: `ANTHROPIC_API_KEY is not set. The pipeline will fail if it runs. ${REMEDIATION}`
+  };
+}
+
 // src/index.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -70364,6 +70380,11 @@ async function run() {
   const token = process.env["GITHUB_TOKEN"];
   if (!token) {
     core.setFailed("GITHUB_TOKEN is required");
+    return;
+  }
+  const apiKeyCheck = checkApiKey(process.env["ANTHROPIC_API_KEY"], true);
+  if (apiKeyCheck.action === "fail") {
+    core.setFailed(apiKeyCheck.message);
     return;
   }
   const eventName = context2.eventName;

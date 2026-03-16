@@ -15,6 +15,7 @@ import {
 } from '@git-glimpse/core';
 import { resolveBaseUrl } from './resolve-base-url.js';
 import { checkApiKey } from './api-key-check.js';
+import { waitForUrl } from './wait-for-url.js';
 
 function streamCommand(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -252,18 +253,5 @@ async function startApp(
   return proc;
 }
 
-export async function waitForUrl(url: string, timeout: number): Promise<void> {
-  const deadline = Date.now() + timeout;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // not ready yet
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  throw new Error(`App did not become ready at ${url} within ${timeout / 1000}s`);
-}
 
 run().catch((err) => core.setFailed(err instanceof Error ? err.message : String(err)));

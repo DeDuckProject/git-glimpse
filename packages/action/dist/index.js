@@ -31,7 +31,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // ../../node_modules/.pnpm/@actions+core@1.11.1/node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
@@ -20136,12 +20135,12 @@ var require_dist_node2 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       endpoint: () => endpoint
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var import_universal_user_agent = require_dist_node();
     var VERSION2 = "9.0.6";
     var userAgent = `octokit-endpoint.js/${VERSION2} ${(0, import_universal_user_agent.getUserAgent)()}`;
@@ -20584,12 +20583,12 @@ var require_dist_node4 = __commonJS({
       isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
       mod
     ));
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       RequestError: () => RequestError
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var import_deprecation = require_dist_node3();
     var import_once = __toESM2(require_once());
     var logOnceCode = (0, import_once.default)((deprecation) => console.warn(deprecation));
@@ -20666,12 +20665,12 @@ var require_dist_node5 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       request: () => request
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var import_endpoint = require_dist_node2();
     var import_universal_user_agent = require_dist_node();
     var VERSION2 = "8.4.1";
@@ -20876,14 +20875,14 @@ var require_dist_node6 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var index_exports = {};
     __export2(index_exports, {
       GraphqlResponseError: () => GraphqlResponseError,
       graphql: () => graphql2,
       withCustomRequest: () => withCustomRequest
     });
-    module2.exports = __toCommonJS2(index_exports);
+    module2.exports = __toCommonJS(index_exports);
     var import_request3 = require_dist_node5();
     var import_universal_user_agent = require_dist_node();
     var VERSION2 = "7.1.1";
@@ -21013,12 +21012,12 @@ var require_dist_node7 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       createTokenAuth: () => createTokenAuth
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var REGEX_IS_INSTALLATION_LEGACY = /^v1\./;
     var REGEX_IS_INSTALLATION = /^ghs_/;
     var REGEX_IS_USER_TO_SERVER = /^ghu_/;
@@ -21084,12 +21083,12 @@ var require_dist_node8 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var index_exports = {};
     __export2(index_exports, {
       Octokit: () => Octokit2
     });
-    module2.exports = __toCommonJS2(index_exports);
+    module2.exports = __toCommonJS(index_exports);
     var import_universal_user_agent = require_dist_node();
     var import_before_after_hook = require_before_after_hook();
     var import_request = require_dist_node5();
@@ -21250,13 +21249,13 @@ var require_dist_node9 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       legacyRestEndpointMethods: () => legacyRestEndpointMethods,
       restEndpointMethods: () => restEndpointMethods
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var VERSION2 = "10.4.1";
     var Endpoints = {
       actions: {
@@ -23406,7 +23405,7 @@ var require_dist_node10 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       composePaginateRest: () => composePaginateRest,
@@ -23414,7 +23413,7 @@ var require_dist_node10 = __commonJS({
       paginateRest: () => paginateRest,
       paginatingEndpoints: () => paginatingEndpoints
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var VERSION2 = "9.2.2";
     function normalizePaginatedListResponse(response) {
       if (!response.data) {
@@ -47251,7 +47250,7 @@ var require_sourcemap_codec_umd = __commonJS({
         }
         return to;
       };
-      var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+      var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
       var sourcemap_codec_exports = {};
       __export2(sourcemap_codec_exports, {
         decode: () => decode,
@@ -47261,7 +47260,7 @@ var require_sourcemap_codec_umd = __commonJS({
         encodeGeneratedRanges: () => encodeGeneratedRanges,
         encodeOriginalScopes: () => encodeOriginalScopes
       });
-      module3.exports = __toCommonJS2(sourcemap_codec_exports);
+      module3.exports = __toCommonJS(sourcemap_codec_exports);
       var comma = ",".charCodeAt(0);
       var semicolon = ";".charCodeAt(0);
       var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -47898,7 +47897,7 @@ var require_trace_mapping_umd = __commonJS({
         isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
         mod
       ));
-      var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+      var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
       var require_sourcemap_codec = __commonJS2({
         "umd:@jridgewell/sourcemap-codec"(exports3, module22) {
           module22.exports = require_sourcemapCodec;
@@ -47929,7 +47928,7 @@ var require_trace_mapping_umd = __commonJS({
         sourceContentFor: () => sourceContentFor,
         traceSegment: () => traceSegment
       });
-      module3.exports = __toCommonJS2(trace_mapping_exports);
+      module3.exports = __toCommonJS(trace_mapping_exports);
       var import_sourcemap_codec = __toESM2(require_sourcemap_codec());
       var import_resolve_uri = __toESM2(require_resolve_uri());
       function stripFilename(path2) {
@@ -48438,7 +48437,7 @@ var require_gen_mapping_umd = __commonJS({
         isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
         mod
       ));
-      var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+      var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
       var require_sourcemap_codec = __commonJS2({
         "umd:@jridgewell/sourcemap-codec"(exports3, module22) {
           module22.exports = require_sourcemapCodec;
@@ -48463,7 +48462,7 @@ var require_gen_mapping_umd = __commonJS({
         toDecodedMap: () => toDecodedMap,
         toEncodedMap: () => toEncodedMap
       });
-      module3.exports = __toCommonJS2(gen_mapping_exports);
+      module3.exports = __toCommonJS(gen_mapping_exports);
       var SetArray = class {
         constructor() {
           this._indexes = { __proto__: null };
@@ -58134,12 +58133,12 @@ var require_dist_node11 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
     __export2(dist_src_exports, {
       requestLog: () => requestLog
     });
-    module2.exports = __toCommonJS2(dist_src_exports);
+    module2.exports = __toCommonJS(dist_src_exports);
     var VERSION2 = "4.0.1";
     function requestLog(octokit) {
       octokit.hook.wrap("request", (request, options) => {
@@ -58184,7 +58183,7 @@ var require_dist_node12 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var index_exports = {};
     __export2(index_exports, {
       composePaginateRest: () => composePaginateRest,
@@ -58192,7 +58191,7 @@ var require_dist_node12 = __commonJS({
       paginateRest: () => paginateRest,
       paginatingEndpoints: () => paginatingEndpoints
     });
-    module2.exports = __toCommonJS2(index_exports);
+    module2.exports = __toCommonJS(index_exports);
     var VERSION2 = "11.4.4-cjs.2";
     function normalizePaginatedListResponse(response) {
       if (!response.data) {
@@ -58579,13 +58578,13 @@ var require_dist_node13 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var index_exports = {};
     __export2(index_exports, {
       legacyRestEndpointMethods: () => legacyRestEndpointMethods,
       restEndpointMethods: () => restEndpointMethods
     });
-    module2.exports = __toCommonJS2(index_exports);
+    module2.exports = __toCommonJS(index_exports);
     var VERSION2 = "13.3.2-cjs.1";
     var Endpoints = {
       actions: {
@@ -60812,12 +60811,12 @@ var require_dist_node14 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var index_exports = {};
     __export2(index_exports, {
       Octokit: () => Octokit2
     });
-    module2.exports = __toCommonJS2(index_exports);
+    module2.exports = __toCommonJS(index_exports);
     var import_core4 = require_dist_node8();
     var import_plugin_request_log = require_dist_node11();
     var import_plugin_paginate_rest = require_dist_node12();
@@ -60834,11 +60833,6 @@ var require_dist_node14 = __commonJS({
 });
 
 // src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  waitForUrl: () => waitForUrl
-});
-module.exports = __toCommonJS(src_exports);
 var core = __toESM(require_core());
 var github = __toESM(require_github());
 var import_node_child_process3 = require("node:child_process");
@@ -70367,6 +70361,20 @@ function checkApiKey(apiKey, shouldRun) {
   };
 }
 
+// src/wait-for-url.ts
+async function waitForUrl(url, timeout) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return;
+    } catch {
+    }
+    await new Promise((r2) => setTimeout(r2, 1e3));
+  }
+  throw new Error(`App did not become ready at ${url} within ${timeout / 1e3}s`);
+}
+
 // src/index.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -70563,23 +70571,7 @@ async function startApp(startCommand, readyUrl) {
   core.info("App is ready");
   return proc;
 }
-async function waitForUrl(url, timeout) {
-  const deadline = Date.now() + timeout;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-    }
-    await new Promise((r2) => setTimeout(r2, 1e3));
-  }
-  throw new Error(`App did not become ready at ${url} within ${timeout / 1e3}s`);
-}
 run().catch((err) => core.setFailed(err instanceof Error ? err.message : String(err)));
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  waitForUrl
-});
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { waitForUrl } from '../../packages/action/src/index.js';
+import { waitForUrl } from '../../packages/action/src/wait-for-url.js';
 
 afterEach(() => {
   vi.restoreAllMocks();

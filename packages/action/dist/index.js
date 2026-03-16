@@ -70361,6 +70361,20 @@ function checkApiKey(apiKey, shouldRun) {
   };
 }
 
+// src/wait-for-url.ts
+async function waitForUrl(url, timeout) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return;
+    } catch {
+    }
+    await new Promise((r2) => setTimeout(r2, 1e3));
+  }
+  throw new Error(`App did not become ready at ${url} within ${timeout / 1e3}s`);
+}
+
 // src/index.ts
 function streamCommand(cmd, args) {
   return new Promise((resolve2, reject) => {
@@ -70396,6 +70410,8 @@ async function run() {
   const previewUrlInput = core.getInput("preview-url") || void 0;
   const startCommandInput = core.getInput("start-command") || void 0;
   const triggerModeInput = core.getInput("trigger-mode") || void 0;
+  const readyTimeoutInput = core.getInput("ready-timeout");
+  const readyTimeoutMs = (parseInt(readyTimeoutInput, 10) || 30) * 1e3;
   let config = await loadConfig(configPath);
   if (previewUrlInput) {
     config = { ...config, app: { ...config.app, previewUrl: previewUrlInput } };
@@ -70494,8 +70510,12 @@ async function run() {
     (0, import_node_child_process3.execFileSync)(parts[0], parts.slice(1), { stdio: "inherit" });
   }
   let appProcess = null;
-  if (config.app.startCommand && !config.app.previewUrl) {
+  if (config.app.startCommand && !config.app.previewUrl && !previewUrlInput) {
     appProcess = await startApp(config.app.startCommand, config.app.readyWhen?.url ?? baseUrl);
+  } else if (config.app.previewUrl || previewUrlInput) {
+    core.info(`Waiting for preview URL to be ready: ${baseUrl}`);
+    await waitForUrl(baseUrl, readyTimeoutMs);
+    core.info("Preview URL is ready");
   }
   try {
     core.info("Running git-glimpse pipeline...");
@@ -70550,18 +70570,6 @@ async function startApp(startCommand, readyUrl) {
   await waitForUrl(readyUrl, 3e4);
   core.info("App is ready");
   return proc;
-}
-async function waitForUrl(url, timeout) {
-  const deadline = Date.now() + timeout;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-    }
-    await new Promise((r2) => setTimeout(r2, 1e3));
-  }
-  throw new Error(`App did not become ready at ${url} within ${timeout / 1e3}s`);
 }
 run().catch((err) => core.setFailed(err instanceof Error ? err.message : String(err)));
 /*! Bundled license information:

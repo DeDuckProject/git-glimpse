@@ -27,6 +27,10 @@ inputs:
     description: 'Max recording duration in seconds'
     default: '30'
     required: false
+  ready-timeout:
+    description: 'How long to wait (in seconds) for the preview URL to become reachable before failing'
+    default: '30'
+    required: false
 
 outputs:
   recording-url:

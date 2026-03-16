@@ -44,7 +44,7 @@ export async function summarizeChanges(
 function buildSummaryPrompt(diff: string, routes: RouteMapping[]): string {
   const routeList =
     routes.length > 0
-      ? routes.map((r) => `  - ${r.file} → ${r.route}`).join('\n')
+      ? routes.map((r) => `  - ${r.file} → [${r.entry}] ${r.route}`).join('\n')
       : '  (no routes detected automatically)';
 
   return `Analyze this code diff and provide a brief summary of the UI changes for a demo video.

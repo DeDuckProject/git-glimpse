@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { loadConfig, runPipeline } from '@git-glimpse/core';
+import { loadConfig, runPipeline, normalizeConfig } from '@git-glimpse/core';
+import type { EntryPointUrl } from '@git-glimpse/core';
 import { execSync, execFile } from 'node:child_process';
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -8,6 +9,36 @@ import { resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../../package.json') as { version: string };
+
+/**
+ * Parse --url values into entry points.
+ * Supports:
+ *   --url http://localhost:3000              (single URL, backward compat)
+ *   --url admin=http://localhost:3000        (named entry point)
+ *   --url admin=http://localhost:3000 --url storefront=http://localhost:4000
+ */
+function parseUrlOptions(urls: string[] | undefined, config: ReturnType<typeof normalizeConfig>): EntryPointUrl[] {
+  if (!urls || urls.length === 0) {
+    // Fall back to config
+    return config.entryPoints.map((ep) => {
+      const baseUrl = ep.previewUrl
+        ?? ep.readyWhen?.url?.replace(/\/[^/]*$/, '')
+        ?? 'http://localhost:3000';
+      return { name: ep.name, baseUrl };
+    });
+  }
+
+  return urls.map((raw, i) => {
+    const eqIndex = raw.indexOf('=');
+    if (eqIndex > 0 && !raw.startsWith('http')) {
+      // name=url format
+      return { name: raw.slice(0, eqIndex), baseUrl: raw.slice(eqIndex + 1) };
+    }
+    // Plain URL — use default or positional name
+    const name = config.entryPoints[i]?.name ?? 'default';
+    return { name, baseUrl: raw };
+  });
+}
 
 program
   .name('git-glimpse')
@@ -18,13 +49,14 @@ program
   .command('run')
   .description('Generate a demo clip for the current working tree changes')
   .option('-d, --diff <diff>', 'Git ref or diff (e.g. HEAD~1, main..HEAD)')
-  .option('-u, --url <url>', 'Base URL of the running app')
+  .option('-u, --url <url...>', 'Base URL(s) of the running app (e.g. http://localhost:3000 or admin=http://localhost:3000)')
   .option('-c, --config <path>', 'Path to git-glimpse.config.ts')
   .option('-o, --output <dir>', 'Output directory for recordings', './recordings')
   .option('--open', 'Open the recording after generation')
   .action(async (options) => {
     try {
       const config = await loadConfig(options.config);
+      const normalized = normalizeConfig(config);
 
       // Get diff
       const diffRef = options.diff ?? 'HEAD~1';
@@ -41,19 +73,18 @@ program
         process.exit(1);
       }
 
-      const baseUrl =
-        options.url ??
-        config.app.readyWhen?.url?.replace(/\/[^/]*$/, '') ??
-        'http://localhost:3000';
+      const entryPoints = parseUrlOptions(options.url, normalized);
 
       console.log(`Running git-glimpse...`);
-      console.log(`  Base URL: ${baseUrl}`);
+      for (const ep of entryPoints) {
+        console.log(`  Entry point "${ep.name}": ${ep.baseUrl}`);
+      }
       console.log(`  Diff: ${diffRef}`);
       console.log(`  Output: ${options.output}`);
 
       const result = await runPipeline({
         diff,
-        baseUrl,
+        entryPoints,
         outputDir: options.output,
         config,
       });

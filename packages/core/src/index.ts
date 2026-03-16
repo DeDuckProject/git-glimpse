@@ -1,9 +1,19 @@
 export { runPipeline } from './pipeline.js';
-export type { PipelineOptions, DemoResult } from './pipeline.js';
+export type { PipelineOptions, DemoResult, EntryPointUrl } from './pipeline.js';
 
 export { loadConfig, parseConfig } from './config/loader.js';
 export { DEFAULT_TRIGGER, DEFAULT_RECORDING, DEFAULT_LLM } from './config/defaults.js';
-export type { GitGlimpseConfig, AppConfig, RecordingConfig, LLMConfig, TriggerConfig } from './config/schema.js';
+export { normalizeConfig } from './config/normalize.js';
+export type { NormalizedConfig, ResolvedEntryPoint, NormalizedRouteMap } from './config/normalize.js';
+export type {
+  GitGlimpseConfig,
+  AppConfig,
+  EntryPoint,
+  RouteMapValue,
+  RecordingConfig,
+  LLMConfig,
+  TriggerConfig,
+} from './config/schema.js';
 
 export { parseDiff, isUIFile } from './analyzer/diff-parser.js';
 export type { ParsedDiff, DiffFile, DiffHunk } from './analyzer/diff-parser.js';

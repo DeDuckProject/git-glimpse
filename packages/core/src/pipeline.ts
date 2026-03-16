@@ -7,12 +7,18 @@ import { generateDemoScript } from './generator/script-generator.js';
 import { runScriptAndRecord } from './recorder/playwright-runner.js';
 import { postProcess } from './recorder/post-processor.js';
 import { takeScreenshots } from './recorder/fallback.js';
+import { normalizeConfig } from './config/normalize.js';
 import type { GitGlimpseConfig } from './config/schema.js';
 import type { ChangeAnalysis } from './analyzer/change-summarizer.js';
 
+export interface EntryPointUrl {
+  name: string;
+  baseUrl: string;
+}
+
 export interface PipelineOptions {
   diff: string;
-  baseUrl: string;
+  entryPoints: EntryPointUrl[];
   outputDir?: string;
   config: GitGlimpseConfig;
   /** When true, skip UI-file filtering and run a general app overview demo. */
@@ -35,18 +41,13 @@ export interface DemoResult {
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<DemoResult> {
-  const { diff, baseUrl, config, generalDemo = false } = options;
+  const { diff, entryPoints, config, generalDemo = false } = options;
   const outputDir = options.outputDir ?? './recordings';
   const errors: string[] = [];
 
-  const recording = config.recording ?? {
-    viewport: { width: 1280, height: 720 },
-    maxDuration: 30,
-    format: 'gif' as const,
-    deviceScaleFactor: 2,
-    showMouseClicks: true,
-  };
-  const llm = config.llm ?? { provider: 'anthropic' as const, model: 'claude-sonnet-4-6' };
+  const normalized = normalizeConfig(config);
+  const recording = normalized.recording;
+  const llm = normalized.llm;
 
   // 1. Parse diff
   const parsedDiff = parseDiff(diff);
@@ -71,8 +72,8 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
 
   // 2. Detect routes
   const routes = detectRoutes(parsedDiff, {
-    routeMap: config.routeMap,
-    baseUrl,
+    routeMap: normalized.routeMap,
+    defaultEntry: entryPoints[0].name,
   });
 
   // 3. Initialize LLM client
@@ -88,7 +89,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
     client,
     analysis,
     diff,
-    baseUrl,
+    entryPoints,
     config,
     generalDemo
   );
@@ -98,7 +99,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
   try {
     const recordingResult = await runScriptAndRecord({
       script,
-      baseUrl,
+      entryPoints,
       recording,
       outputDir,
     });
@@ -128,7 +129,7 @@ export async function runPipeline(options: PipelineOptions): Promise<DemoResult>
     errors.push(`Recording failed: ${message}`);
 
     // Fallback: screenshots
-    const fallback = await takeScreenshots(baseUrl, routes, recording, outputDir);
+    const fallback = await takeScreenshots(entryPoints, routes, recording, outputDir);
 
     return {
       success: false,

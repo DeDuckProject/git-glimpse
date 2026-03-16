@@ -23,10 +23,12 @@ function makeMockClient(responses: string[]) {
 
 const ANALYSIS: ChangeAnalysis = {
   changedFiles: ['app/routes/home.tsx'],
-  affectedRoutes: [{ file: 'app/routes/home.tsx', route: '/', changeType: 'modified' }],
+  affectedRoutes: [{ file: 'app/routes/home.tsx', route: '/', entry: 'default', changeType: 'modified' }],
   changeDescription: 'Updated home page',
   suggestedDemoFlow: '1. Navigate to home\n2. Verify changes',
 };
+
+const ENTRY_POINTS = [{ name: 'default', baseUrl: 'http://localhost:3000' }];
 
 const CONFIG: GitGlimpseConfig = {
   app: { },
@@ -39,7 +41,7 @@ describe('generateDemoScript', () => {
   it('returns valid script on first attempt', async () => {
     const client = makeMockClient([VALID_SCRIPT]);
 
-    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     expect(result.attempts).toBe(1);
     expect(result.errors).toHaveLength(0);
@@ -49,7 +51,7 @@ describe('generateDemoScript', () => {
   it('retries on invalid script and succeeds on second attempt', async () => {
     const client = makeMockClient([INVALID_SCRIPT, VALID_SCRIPT]);
 
-    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     expect(result.attempts).toBe(2);
     expect(result.errors).toHaveLength(1);
@@ -60,7 +62,7 @@ describe('generateDemoScript', () => {
   it('returns best-effort script after exhausting all retries', async () => {
     const client = makeMockClient([INVALID_SCRIPT, INVALID_SCRIPT, INVALID_SCRIPT]);
 
-    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     expect(result.attempts).toBe(3);
     expect(result.errors).toHaveLength(3);
@@ -69,7 +71,7 @@ describe('generateDemoScript', () => {
   it('makes at most 3 LLM calls (1 initial + 2 retries)', async () => {
     const client = makeMockClient([INVALID_SCRIPT, INVALID_SCRIPT, INVALID_SCRIPT]);
 
-    await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     expect(client.messages.create).toHaveBeenCalledTimes(3);
   });
@@ -77,7 +79,7 @@ describe('generateDemoScript', () => {
   it('uses general demo prompt when generalDemo is true', async () => {
     const client = makeMockClient([VALID_SCRIPT]);
 
-    await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG, true);
+    await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG, true);
 
     const prompt = client.messages.create.mock.calls[0][0].messages[0].content;
     // General demo prompt focuses on app overview, not specific diff
@@ -87,7 +89,7 @@ describe('generateDemoScript', () => {
   it('uses diff-specific prompt when generalDemo is false', async () => {
     const client = makeMockClient([VALID_SCRIPT]);
 
-    await generateDemoScript(client, ANALYSIS, 'raw diff here', 'http://localhost:3000', CONFIG, false);
+    await generateDemoScript(client, ANALYSIS, 'raw diff here', ENTRY_POINTS, CONFIG, false);
 
     const prompt = client.messages.create.mock.calls[0][0].messages[0].content;
     expect(prompt).toContain('raw diff here');
@@ -96,7 +98,7 @@ describe('generateDemoScript', () => {
   it('uses retry prompt on subsequent attempts', async () => {
     const client = makeMockClient([INVALID_SCRIPT, VALID_SCRIPT]);
 
-    await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     // Second call should use retry prompt which includes the previous script
     expect(client.messages.create).toHaveBeenCalledTimes(2);
@@ -108,7 +110,7 @@ describe('generateDemoScript', () => {
     const client = makeMockClient([VALID_SCRIPT]);
     const minimalConfig: GitGlimpseConfig = { app: {} } as any;
 
-    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', minimalConfig);
+    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, minimalConfig);
 
     expect(result.script).toContain('export async function demo');
   });
@@ -117,7 +119,7 @@ describe('generateDemoScript', () => {
     const wrappedScript = '```typescript\n' + VALID_SCRIPT + '\n```';
     const client = makeMockClient([wrappedScript]);
 
-    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', CONFIG);
+    const result = await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, CONFIG);
 
     expect(result.script).not.toContain('```');
     expect(result.script).toContain('export async function demo');
@@ -130,7 +132,7 @@ describe('generateDemoScript', () => {
       app: { hint: 'Login with test@example.com / password123' },
     };
 
-    await generateDemoScript(client, ANALYSIS, 'raw diff', 'http://localhost:3000', configWithHint);
+    await generateDemoScript(client, ANALYSIS, 'raw diff', ENTRY_POINTS, configWithHint);
 
     const prompt = client.messages.create.mock.calls[0][0].messages[0].content;
     expect(prompt).toContain('test@example.com');

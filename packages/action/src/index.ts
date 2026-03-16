@@ -13,7 +13,8 @@ import {
   DEFAULT_TRIGGER,
   type GitGlimpseConfig,
 } from '@git-glimpse/core';
-import { resolveBaseUrl } from './resolve-base-url.js';
+import { normalizeConfig } from '@git-glimpse/core';
+import { resolveEntryPointUrls } from './resolve-base-url.js';
 import { checkApiKey } from './api-key-check.js';
 
 function streamCommand(cmd: string, args: string[]): Promise<string> {
@@ -57,12 +58,22 @@ async function run(): Promise<void> {
   const triggerModeInput = core.getInput('trigger-mode') || undefined;
 
   let config = await loadConfig(configPath);
-  if (previewUrlInput) {
-    config = { ...config, app: { ...config.app, previewUrl: previewUrlInput } };
+
+  // Action-level overrides apply to the first/default entry point
+  if (previewUrlInput || startCommandInput) {
+    if (Array.isArray(config.app)) {
+      const first = { ...config.app[0] };
+      if (previewUrlInput) first.previewUrl = previewUrlInput;
+      if (startCommandInput) first.startCommand = startCommandInput;
+      config = { ...config, app: [first, ...config.app.slice(1)] };
+    } else {
+      const app = { ...config.app };
+      if (previewUrlInput) app.previewUrl = previewUrlInput;
+      if (startCommandInput) app.startCommand = startCommandInput;
+      config = { ...config, app };
+    }
   }
-  if (startCommandInput) {
-    config = { ...config, app: { ...config.app, startCommand: startCommandInput } };
-  }
+
   if (triggerModeInput && ['auto', 'on-demand', 'smart'].includes(triggerModeInput)) {
     config = {
       ...config,
@@ -162,12 +173,16 @@ async function run(): Promise<void> {
     return;
   }
 
-  const baseUrlResult = resolveBaseUrl(config, previewUrlInput);
-  if (!baseUrlResult.url) {
-    core.setFailed(baseUrlResult.error!);
+  // Normalize config and resolve entry point URLs
+  const normalized = normalizeConfig(config);
+  const urlResult = resolveEntryPointUrls(normalized.entryPoints, previewUrlInput);
+  if (urlResult.error) {
+    core.setFailed(urlResult.error);
     return;
   }
-  const baseUrl = baseUrlResult.url;
+  const entryPoints = urlResult.entryPoints;
+
+  core.info(`Entry points: ${entryPoints.map((ep) => `${ep.name}=${ep.baseUrl}`).join(', ')}`);
 
   if (config.setup) {
     core.info(`Running setup: ${config.setup}`);
@@ -175,14 +190,26 @@ async function run(): Promise<void> {
     execFileSync(parts[0]!, parts.slice(1), { stdio: 'inherit' });
   }
 
-  let appProcess: ReturnType<typeof spawn> | null = null;
-  if (config.app.startCommand && !config.app.previewUrl) {
-    appProcess = await startApp(config.app.startCommand, config.app.readyWhen?.url ?? baseUrl);
+  // Start app processes for entry points that have a startCommand and no previewUrl
+  const appProcesses: Array<ReturnType<typeof spawn>> = [];
+  for (const ep of normalized.entryPoints) {
+    if (ep.startCommand && !ep.previewUrl) {
+      const resolved = entryPoints.find((r) => r.name === ep.name);
+      const readyUrl = ep.readyWhen?.url ?? resolved?.baseUrl ?? 'http://localhost:3000';
+      const proc = await startApp(ep.name, ep.startCommand, readyUrl);
+      appProcesses.push(proc);
+    }
   }
 
   try {
     core.info('Running git-glimpse pipeline...');
-    const result = await runPipeline({ diff, baseUrl, outputDir: './recordings', config, generalDemo: decision.generalDemo });
+    const result = await runPipeline({
+      diff,
+      entryPoints,
+      outputDir: './recordings',
+      config,
+      generalDemo: decision.generalDemo,
+    });
 
     if (result.errors.length > 0) {
       core.warning(`Pipeline completed with errors:\n${result.errors.join('\n')}`);
@@ -228,21 +255,24 @@ async function run(): Promise<void> {
     await addCommentReaction('confused');
     throw err;
   } finally {
-    appProcess?.kill();
+    for (const proc of appProcesses) {
+      proc.kill();
+    }
   }
 }
 
 
 async function startApp(
+  name: string,
   startCommand: string,
   readyUrl: string
 ): Promise<ReturnType<typeof spawn>> {
   const parts = startCommand.split(' ');
-  core.info(`Starting app: ${startCommand}`);
+  core.info(`Starting app "${name}": ${startCommand}`);
   const proc = spawn(parts[0]!, parts.slice(1), { stdio: 'inherit', shell: false });
 
   await waitForUrl(readyUrl, 30000);
-  core.info('App is ready');
+  core.info(`App "${name}" is ready`);
   return proc;
 }
 

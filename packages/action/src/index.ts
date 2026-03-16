@@ -55,6 +55,8 @@ async function run(): Promise<void> {
   const previewUrlInput = core.getInput('preview-url') || undefined;
   const startCommandInput = core.getInput('start-command') || undefined;
   const triggerModeInput = core.getInput('trigger-mode') || undefined;
+  const readyTimeoutInput = core.getInput('ready-timeout');
+  const readyTimeoutMs = (parseInt(readyTimeoutInput, 10) || 30) * 1000;
 
   let config = await loadConfig(configPath);
   if (previewUrlInput) {
@@ -176,8 +178,12 @@ async function run(): Promise<void> {
   }
 
   let appProcess: ReturnType<typeof spawn> | null = null;
-  if (config.app.startCommand && !config.app.previewUrl) {
+  if (config.app.startCommand && !config.app.previewUrl && !previewUrlInput) {
     appProcess = await startApp(config.app.startCommand, config.app.readyWhen?.url ?? baseUrl);
+  } else if (config.app.previewUrl || previewUrlInput) {
+    core.info(`Waiting for preview URL to be ready: ${baseUrl}`);
+    await waitForUrl(baseUrl, readyTimeoutMs);
+    core.info('Preview URL is ready');
   }
 
   try {
@@ -246,7 +252,7 @@ async function startApp(
   return proc;
 }
 
-async function waitForUrl(url: string, timeout: number): Promise<void> {
+export async function waitForUrl(url: string, timeout: number): Promise<void> {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     try {

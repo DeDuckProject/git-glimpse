@@ -1,0 +1,110 @@
+# Example: git-glimpse with a Cloudflare Pages deploy preview
+#
+# Pattern: run the Cloudflare deploy first (job: deploy), then run
+# git-glimpse against the resulting preview URL (job: glimpse).
+# GitHub's `needs:` keyword handles the dependency — no extra
+# git-glimpse configuration required.
+#
+# The same pattern works for any deploy-preview service (Vercel,
+# Netlify, Railway, …). Just swap the deploy action and the output
+# name that carries the preview URL.
+
+name: Preview & Demo
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  # ── 1. Deploy to Cloudflare Pages ─────────────────────────────────
+  deploy:
+    runs-on: ubuntu-latest
+    # Skip deployment for comment-triggered runs — the preview
+    # already exists; we only need to record a new demo.
+    if: github.event_name == 'pull_request'
+    outputs:
+      preview-url: ${{ steps.cf.outputs.url }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Pages
+        id: cf
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: my-project        # replace with your project name
+          directory: dist                # replace with your build output dir
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── 2. Record a visual demo ────────────────────────────────────────
+  glimpse:
+    # Wait for the deploy job when it ran; the job is skipped on
+    # comment events so we use `always()` + a guard to still run.
+    needs: [deploy]
+    if: >-
+      always() && (
+        github.event_name == 'issue_comment' ||
+        needs.deploy.result == 'success'
+      ) && (
+        github.event_name == 'pull_request' ||
+        (github.event_name == 'issue_comment' &&
+         github.event.issue.pull_request != null &&
+         contains(github.event.comment.body, '/glimpse'))
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: >-
+            ${{
+              github.event_name == 'issue_comment'
+                && format('refs/pull/{0}/head', github.event.issue.number)
+                || ''
+            }}
+
+      # Lightweight check — skip expensive installs if not needed
+      - uses: DeDuckProject/git-glimpse/check-trigger@v1
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install FFmpeg
+        if: steps.check.outputs.should-run == 'true'
+        run: sudo apt-get install -y ffmpeg
+
+      - name: Cache Playwright
+        if: steps.check.outputs.should-run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        if: steps.check.outputs.should-run == 'true'
+        run: npx playwright install chromium --with-deps
+
+      - uses: DeDuckProject/git-glimpse@v1
+        if: steps.check.outputs.should-run == 'true'
+        with:
+          # On PR events the deploy job provided a fresh URL.
+          # On comment events the deploy job was skipped, so fall back
+          # to the environment variable set by Cloudflare on earlier runs,
+          # or supply a static staging URL if you have one.
+          preview-url: ${{ needs.deploy.outputs.preview-url || vars.STAGING_URL }}
+          # Give the preview a moment to fully propagate (default: 30s).
+          # Raise this if your CDN takes longer to warm up.
+          ready-timeout: '30'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -564,4 +564,4 @@ When a diff exceeds the limit, it is cut at the threshold and a `... (diff trunc
 
 ## License
 
-MIT
+AGPL
